@@ -60,25 +60,33 @@ MPU* myMPU;
 
 /*
  * MPL Initializations
- */ 
+ */
 int16_t x, y, z;
 int16_t x_off, y_off, z_off;
 float x_pos, y_pos, z_pos;
 bool w = false;
 MPL* PSensor;
-
 /*
- * State Machine Initialization 
+ * Kalman Filter Initializations
+ */
+ float Predict_Constant = 1.10;
+ float Predict_Error;
+ float Previous_Predict;
+ float Altimeter_Error = 50;
+ float Gain = 0.0;
+/*
+ * State Machine Initialization
  */
 Rocket rocket(RESET, RESET);
 
 /*
  * maybe sensor related setup?
  */
+
 void setup() {
   Serial.begin(9600);
   delay(500);
-  
+
   // Initialize MPU
   myMPU = new MPU(0, ADDR);
   myMPU->initGyro(250);
@@ -89,12 +97,28 @@ void setup() {
   PSensor->setGround();
 
   //Initialize pins for ignition circuits as outputs
-  pinMode(DROGUE_IGNITION_CIRCUIT, OUTPUT); 
-  pinMode(PAYLOAD_IGNITION_CIRCUIT, OUTPUT); 
-  
+  pinMode(DROGUE_IGNITION_CIRCUIT, OUTPUT);
+  pinMode(PAYLOAD_IGNITION_CIRCUIT, OUTPUT);
+
   x = 0;
 }
+void initializeKalman(float altitude){
+  Previous_Predict = altitude;
+  Predict_Error = 1;
+  Predict_Constant = 1.1; //Need to determine experimentally
+  return 0;
+}
+float kalmanFilter (float altitude){
+  //Predict:
+  float Predicted_Alt = Predict_Constant *Previous_Predict;
+  Predict_Error = Predict_Constant * Predict_Error *Predict_Constant;
 
+  //Update:
+  Gain = Predict_Error/ (Predict_Error + Altimeter_Error);
+  Predicted_Alt = Predicted_Alt + Gain * (altitude - Predicted_Alt);
+  Predict_Error = (1- Gain) * Predict_Error;
+  return Predicted_Alt;
+}
 /*
  * main loop function
  * uses a switch statement to switch between states
@@ -104,24 +128,28 @@ void loop(){
   //make sure ignition pins stay low!
   digitalWrite(DROGUE_IGNITION_CIRCUIT, LOW);
   digitalWrite(PAYLOAD_IGNITION_CIRCUIT, LOW);
-  
-  float altitude = 0;
 
-  Serial.println(x); 
+  float altitude = 0;
+  float filtered_alt;
+  Serial.println(x);
   x++;
 
   /*
    * Print MPL Data
    */
   altitude = PSensor->readAltitude();
+  if(x == 0){
+    initializeKalman(altitude);
+  }
+  filtered_alt = kalmanFilter(altitude);
   Serial.println("MPL Data: ");
   Serial.print ("Offset: ");
   Serial.println(PSensor->getOffset());
-  Serial.print("Current Altitude: "); 
-  Serial.println(altitude); 
+  Serial.print("Current Altitude: ");
+  Serial.println(filtered_alt);
 
   /*
-   * Print MPU Data 
+   * Print MPU Data
    */
   myMPU->readGyro(gyro);
   myMPU->cleanGyro(cleanGyro, gyro);
@@ -130,17 +158,17 @@ void loop(){
   Serial.println(cleanGyro[1]);
   Serial.println(cleanGyro[2]);
 
-  /* 
-   *  Print Current and Next State 
+  /*
+   *  Print Current and Next State
    */
   Serial.print("Current State: ");
   Serial.println(rocket.currentState);
   Serial.print("Next State: ");
   Serial.println(rocket.nextState);
-  
+
   switch (rocket.currentState){
     case RESET:
-      rocket.reset(); 
+      rocket.reset();
       rocket.nextState = STANDBY;
       break;
     case STANDBY:
@@ -189,6 +217,3 @@ void loop(){
   }
   rocket.currentState = rocket.nextState;
 }
-
-
-
