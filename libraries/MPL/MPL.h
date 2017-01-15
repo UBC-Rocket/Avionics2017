@@ -5,9 +5,16 @@
 
 typedef short int16_t;
 
-class MPL {
+#define byte uint8_t
+#define ADDRESS 0x60		// Sensor I2C address
+#define STD_TEMP 20			// Standard temperature at sea level
+#define STD_PRESS 101326	// Standard pressure at sea level
 
-  int num_samples_avg;
+#define NUM_SAMPLES_AVG 100 // Number of samples we want to average 
+
+class MPL {
+  
+  int num_samples_avg; 
   bool wire;
   bool ground_set;
   float ground_level;
@@ -15,21 +22,21 @@ class MPL {
 public:
 
   MPL(bool pickWire1);
-
+  
   // Sensor configuration functions
   void resetChip();
-
+    
   // Initialization functions
   bool init();
   void setGround();
   float getOffset();
-
+    
   // Check for data functions
   bool getDataReady();
-
+    
   // Read data functions
-  float readAltitude();
-  float readAvgAltitude();
+  float readAltitude();  
+  float readAvgAltitude(); 
   float readTemp();
   uint8_t readByte(uint8_t reg);
 
@@ -38,8 +45,8 @@ public:
 
 private:
   // Writes a given byte to a given register
-  uint8_t writeByte(uint8_t regAddr, uint8_t value);
-
+  byte writeByte(byte _regAddr, byte _value);
+  
   int readBytes(uint8_t reg, uint8_t length, uint8_t* data);
 };
 
