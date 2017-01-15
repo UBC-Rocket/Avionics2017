@@ -12,7 +12,7 @@
 #define STD_TEMP 20			// Standard temperature at sea level
 #define STD_PRESS 101326	// Standard pressure at sea level
 
-#define NUM_SAMPLES_AVG 100 // Number of samples we want to average 
+#define NUM_SAMPLES_AVG 100 // Number of samples we want to average
 
 
 MPL::MPL(bool pickWire1) {
@@ -37,7 +37,7 @@ void MPL::resetChip() {
 //  s to see that the altimeter is connected and functional
 //  and sets up the control registers
 boolean MPL::init() {
-  readByte(WHO_AM_I) == 196;
+  //readByte(WHO_AM_I) == 196;
 
   // CTRL_REG1 (0x26): enable sensor, oversampling x128, altimeter mode
   // writeByte(0x26, 0xBB);
@@ -49,7 +49,7 @@ boolean MPL::init() {
   //write(0x14, 0xC6);// BAR_IN_MSB (0x14):
   //write(0x15, 0x5B);// BAR_IN_LSB (0x15):
 
-  //setGround(); //why cant you call it from here :(
+  setGround(); //why cant you call it from here :(
 
   num_samples_avg = NUM_SAMPLES_AVG;
 
