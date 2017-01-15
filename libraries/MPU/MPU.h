@@ -33,4 +33,4 @@ private:
   uint8_t read(uint8_t reg);
   int read(uint8_t reg, uint8_t length, uint8_t* data);
 };
-#endif
+#endif 
