@@ -38,7 +38,7 @@ public:
 
 private:
   // Writes a given byte to a given register
-  byte writeByte(byte _regAddr, byte _value);
+  uint8_t writeByte(uint8_t regAddr, uint8_t value);
 
   int readBytes(uint8_t reg, uint8_t length, uint8_t* data);
 };
