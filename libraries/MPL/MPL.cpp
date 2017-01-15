@@ -8,9 +8,11 @@
 #define OUT_P_MSB 0x01
 #define OUT_T_MSB 0x04
 
+#define ADDRESS 0x60		// Sensor I2C address
+#define STD_TEMP 20			// Standard temperature at sea level
+#define STD_PRESS 101326	// Standard pressure at sea level
 
-
-
+#define NUM_SAMPLES_AVG 100 // Number of samples we want to average 
 
 
 MPL::MPL(bool pickWire1) {
@@ -49,7 +51,7 @@ boolean MPL::init() {
 
   //setGround(); //why cant you call it from here :(
 
-  num_samples_avg = 4;
+  num_samples_avg = NUM_SAMPLES_AVG;
 
   delay(1000);
 
