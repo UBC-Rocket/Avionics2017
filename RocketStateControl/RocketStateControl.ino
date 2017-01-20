@@ -106,7 +106,7 @@ void initializeKalman(float altitude){
   Previous_Predict = altitude;
   Predict_Error = 1;
   Predict_Constant = 1.1; //Need to determine experimentally
-  return 0;
+ // return 0; Return or void? 
 }
 float kalmanFilter (float altitude){
   //Predict:
