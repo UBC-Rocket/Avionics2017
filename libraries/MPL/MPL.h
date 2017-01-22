@@ -2,6 +2,7 @@
 #define MPL_H
 
 #include <inttypes.h>
+#include <Arduino.h>
 
 typedef short int16_t;
 
@@ -23,6 +24,7 @@ public:
 
   MPL(bool pickWire1);
   
+  
   // Sensor configuration functions
   void resetChip();
     
@@ -36,7 +38,7 @@ public:
     
   // Read data functions
   float readAltitude();  
-  float readAvgAltitude(); 
+ 
   float readTemp();
   uint8_t readByte(uint8_t reg);
 
@@ -44,6 +46,7 @@ public:
   int initTemp(uint8_t fullScale);
 
 private:
+  void debug(String msg);
   // Writes a given byte to a given register
   byte writeByte(byte _regAddr, byte _value);
   
