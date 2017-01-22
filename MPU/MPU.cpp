@@ -243,8 +243,7 @@ static uint8_t dmp_memory[DMP_CODE_SIZE] = {
 }; //copied directly from invesense's MPU code library
 
 //hangs if chip disconnected, fix that.
-
-int MPU::begin(bool whichWire, uint8_t Addr) {
+MPU::MPU(bool whichWire, uint8_t Addr) {
   int err;
   debug("Initializing library");
   wire = whichWire;
@@ -269,16 +268,7 @@ int MPU::begin(bool whichWire, uint8_t Addr) {
   if(err = write(USR_CNTRL, 0)) debug(err);
   debug("Library Initialized");
   debug("WHOAMI (should be 0x73 = 115): ");
-
-  return selfTest();
-}
-
-int selfTest() {
-  uint8_t test;
-  test = read(WHOAMI);
-  if(test != 0x73) return -1;
-
-  return 0;
+  debug((String)read(WHOAMI));
 }
 
 int MPU::initGyro(uint16_t fullScale) {

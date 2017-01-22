@@ -11,8 +11,7 @@ class MPU {
   uint8_t addr;
   float gyroFS, accelFS;
 public:
-  int begin(bool whichWire, uint8_t Addr);
-  int selfTest();
+  MPU(bool whichWire, uint8_t Addr);
   int initGyro(uint16_t fullScale);
   int initAccel(uint8_t fullScale);
   int initMag();
