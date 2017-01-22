@@ -20,17 +20,19 @@ public:
   int readAccel(int16_t *data);
   int readMag(int16_t *data);
 
-  void cleanGyro(float* cleanData, int16_t *data);
+  void cleanGyro(float *cleanData, int16_t *data);
 
   int loadDMP();
+
+  int enableDMP(bool enable);
 private:
   void debug(String msg);
-  int writeMem(uint16_t addr, uint8_t length, uint8_t* data);
-  int readMem(uint16_t addr, uint8_t length, uint8_t* data);
+  int writeMem(uint16_t addr, uint8_t length, uint8_t *data);
+  int readMem(uint16_t addr, uint8_t length, uint8_t *data);
 
   int write(uint8_t reg, uint8_t data);
-  int write(uint8_t reg, uint8_t length, uint8_t* data);
+  int write(uint8_t reg, uint8_t length, uint8_t *data);
   uint8_t read(uint8_t reg);
-  int read(uint8_t reg, uint8_t length, uint8_t* data);
+  int read(uint8_t reg, uint8_t length, uint8_t *data);
 };
 #endif

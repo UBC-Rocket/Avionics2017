@@ -24,8 +24,13 @@
 #define magFS 4800.0
 #define shortFS 32768.0
 
+#define FIFO_COUNT 0x72 //high byte of two byte set of registers containing length of data in fifo
+#define FIFO_RW 0x74 //register to read fifo data from. Read sequentially from the same address.
+
+//hard values from invensense for DMP registers
 #define DMP_START_ADDR 0x70
 #define DMP_CODE_SIZE           (3062)
+#define CFG_9_QUAT              (2712)
 
 static uint8_t dmp_memory[DMP_CODE_SIZE] = {
     /* bank # 0 */
@@ -343,6 +348,22 @@ void MPU::cleanGyro(float*cleanData, int16_t* data) {
   }
 }
 
+int MPU::readDMP(long *quat) {
+  uint8_t data[16];
+  unsigned short fifoCount;
+  uint8_t tmp[2];
+
+  if(err = read(FIFO_COUNT, 2 tmp)) return err;
+  fifoCount = (tmp[0] << 8) | tmp[1];
+
+  if(err = read(FIFO_RW, 16, data)) return err;
+
+  quat[0] = ((long)data[0] << 24) | ((long)data[1] << 16) | ((long)data[2] << 8) | data[3];
+  quat[1] = ((long)data[4] << 24) | ((long)data[5] << 16) | ((long)data[6] << 8) | data[7];
+  quat[2] = ((long)data[8] << 24) | ((long)data[9] << 16) | ((long)data[10] << 8) | data[11];
+  quat[3] = ((long)data[12] << 24) | ((long)data[13] << 16) | ((long)data[14] << 8) | data[15];
+}
+
 int MPU::loadDMP() {
   int err;
   uint16_t length;
@@ -364,11 +385,34 @@ int MPU::loadDMP() {
   return 0;
 }
 
+int MPU::enableDMP(bool enable) {
+  uint8_t data[4];
+  uint8_t uctrl = (1<<5);
+
+  if(enable) {
+    //Hex code from invesense for dmp enable 9-axis
+    data[0] = 0xC0;
+    data[1] = 0xC2;
+    data[2] = 0xC4;
+    data[3] = 0xC6;
+
+    uctrl |= (1<<7) | (1<<6) //enable fifo and dmp
+    uctrl |= (1<<2); //fifo reset bit
+  } else {
+    data = {0x8B, 0x8B, 0x8B, 0x8B};
+  }
+
+  if(err = writeMem(CFG_9_QUAT, 4, data)) return err;
+
+  if(err = write(USR_CNTRL, uctrl)) return err;
+}
+
 void MPU::debug(String msg){
   Serial.println(msg);
 }
 
-int MPU::writeMem(uint16_t addr, uint8_t length, uint8_t* data) {
+
+int MPU::writeMem(uint16_t addr, uint8_t length, uint8_t *data) {
   int err;
 
   if(!data) return -1;
@@ -385,7 +429,7 @@ int MPU::writeMem(uint16_t addr, uint8_t length, uint8_t* data) {
   return 0;
 }
 
-int MPU::readMem(uint16_t addr, uint8_t length, uint8_t* data) {
+int MPU::readMem(uint16_t addr, uint8_t length, uint8_t *data) {
   int err;
   if(!data) return -1;
   uint8_t addrBytes[2];
@@ -403,7 +447,7 @@ int MPU::write(uint8_t reg, uint8_t data) {
   return write(reg, 1, &data);
 }
 
-int MPU::write(uint8_t reg, uint8_t length, uint8_t* data) {
+int MPU::write(uint8_t reg, uint8_t length, uint8_t *data) {
   if(!data) return -1;
 
   if(wire) {
@@ -426,7 +470,7 @@ uint8_t MPU::read(uint8_t reg) {
   return data;
 }
 
-int MPU::read(uint8_t reg, uint8_t length, uint8_t* data) {
+int MPU::read(uint8_t reg, uint8_t length, uint8_t *data) {
   if(!data) return -1;
 
   if(wire) {
