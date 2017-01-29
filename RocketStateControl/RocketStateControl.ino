@@ -84,15 +84,15 @@ MPL* PSensor;
 
 
 //the posistion in the buffers
-int bufPosition = 1;
+int bufPosition = 0;
 /*
  * The Buffer for each seonsor type
  */
 //-----------------------
 //MPU 
 //find these by trial and error
-    float MPUSenorError = 0;
-    float MPUSenorPredConst = 0;
+    float MPUSenorError = 0.75;
+    float MPUSenorPredConst = 0.75;
     
 //Buffers
 //MPU1
@@ -141,13 +141,32 @@ int bufPosition = 1;
   int16_t magReadingsRAW3[BUFFER_SIZE][3];
 
 
+//-----------------------
+//ALT
+//find these by trial and error
+    float MPLSenorError = 0.75;
+    float MPLSenorPredConst = 0.75;
+    
+//Buffers
+//ATL1
+  float previousAltReadings1 = 1;
 
+  int16_t alt1RAW[BUFFER_SIZE][3];
+  int16_t alt1FILTER[BUFFER_SIZE][3];
 
 
 void loadnewestRawValues(){
   //read alts
-    
+    PSensor->readAltitude();
+  
+  //read MPUs
 
+    
+}
+void filternewestValues(){
+  //read alts
+   
+  
   //read MPUs
 
     
@@ -178,25 +197,9 @@ void setup() {
   pinMode(DROGUE_IGNITION_CIRCUIT, OUTPUT);
   pinMode(PAYLOAD_IGNITION_CIRCUIT, OUTPUT);
 
-  x = 0;
+  
 }
-void initializeKalman(float altitude){
-  Previous_Predict = altitude;
-  Predict_Error = 1;
-  Predict_Constant = 1.1; //Need to determine experimentally
- // return 0; Return or void? 
-}
-float kalmanFilter (float altitude){
-  //Predict:
-  float Predicted_Alt = Predict_Constant *Previous_Predict;
-  Predict_Error = Predict_Constant * Predict_Error *Predict_Constant;
 
-  //Update:
-  Gain = Predict_Error/ (Predict_Error + Altimeter_Error);
-  Predicted_Alt = Predicted_Alt + Gain * (altitude - Predicted_Alt);
-  Predict_Error = (1- Gain) * Predict_Error;
-  return Predicted_Alt;
-}
 /*
  * main loop function
  * uses a switch statement to switch between states
@@ -207,19 +210,13 @@ void loop(){
   digitalWrite(DROGUE_IGNITION_CIRCUIT, LOW);
   digitalWrite(PAYLOAD_IGNITION_CIRCUIT, LOW);
 
-  float altitude = 0;
-  float filtered_alt;
-  Serial.println(x);
-  x++;
-
+ 
+ loadnewestRawValues();
   /*
    * Print MPL Data
    */
   altitude = PSensor->readAltitude();
-  if(x == 0){
-    initializeKalman(altitude);
-  }
-  filtered_alt = kalmanFilter(altitude);
+  
   Serial.println("MPL Data: ");
   Serial.print ("Offset: ");
   Serial.println(PSensor->getOffset());
@@ -294,4 +291,16 @@ void loop(){
       break;
   }
   rocket.currentState = rocket.nextState;
+}
+
+float filterData(float* predictionError, float sensorError, float predictConstant, float previousPredict, float reading) {
+  //Predict:
+  float filteredReading = predictConstant*previousPredict;
+  *predictionError = predictConstant * (*predictionError) * predictConstant;
+
+  //Update:
+  float Gain = (*predictionError)/(*predictionError + sensorError);
+  filteredReading = filteredReading + Gain * (reading - filteredReading);
+  *predictionError = (1-Gain) * (*predictionError);
+  return filteredReading;
 }
