@@ -52,9 +52,9 @@ const int PAYLOAD_IGNITION_CIRCUIT = 8; //pin to nose cone ignition circuit
 /*
  * MPU Initialization
  */
-int16_t gyro[3];
+int16_t* gyro;
 int16_t linx, liny, linz;
-float cleanGyro[3];
+float* cleanGyro;
 unsigned long elapsed = 0;
 MPU* myMPU;
 
@@ -97,9 +97,14 @@ int bufPosition = 0;
 //Buffers
 //MPU1
  #define BUFFER_SIZE 100
-  float previousErrorGyroReadings1 = 1;
-  float previousErrorAccelReadings1 = 1;
-  float previousErrorMagReadings1 = 1;
+
+  float previousFilterGyroReadings1[3];
+  float previousFilterAccelReadings1[3];
+  float previousFilterMagReadings1[3];
+  
+  float previousErrorGyroReadings1[3] = {1, 1, 1};
+  float previousErrorAccelReadings1[3] = {1, 1, 1};
+  float previousErrorMagReadings1[3] = {1, 1, 1};
 
   int16_t gyroReadingsRAW1[BUFFER_SIZE][3];
   int16_t accelReadingsRAW1[BUFFER_SIZE][3];
@@ -111,10 +116,13 @@ int bufPosition = 0;
 
 //MPU2
 
-
-  float previousErrorGyroReadings2 = 1;
-  float previousErrorAccelReadings2 = 1;
-  float previousErrorMagReadings2 = 1;
+  float previousFilterGyroReadings2[3];
+  float previousFilterAccelReadings2[3];
+  float previousFilterMagReadings2[3];
+  
+  float previousErrorGyroReadings2[3] = {1, 1, 1};
+  float previousErrorAccelReadings2[3] = {1, 1, 1};
+  float previousErrorMagReadings2[3] = {1, 1, 1};
 
   int16_t gyroReadingsRAW2[BUFFER_SIZE][3];
   int16_t accelReadingsRAW2[BUFFER_SIZE][3];
@@ -127,10 +135,14 @@ int bufPosition = 0;
 
 //MPU3
 
+  float previousFilterGyroReadings3[3];
+  float previousFilterAccelReadings3[3];
+  float previousFilterMagReadings3[3];
+  
 
-  float previousErrorGyroReadings3 = 1;
-  float previousErrorAccelReadings3 = 1;
-  float previousErrorMagReadings3 = 1;
+  float previousErrorGyroReadings3[3] = {1, 1, 1};
+  float previousErrorAccelReadings3[3] = {1, 1, 1};
+  float previousErrorMagReadings3[3] = {1, 1, 1};
 
   int16_t gyroReadingsFILTER3[BUFFER_SIZE][3];
   int16_t accelReadingsFILTER3[BUFFER_SIZE][3];
@@ -166,12 +178,11 @@ void loadnewestRawValues(){
   //read alts
     alt1RAW[bufPosition] = PSensor->readAltitude();
   //read gyros
-    /*myMPU->readGyro(gyro);
+    myMPU->readGyro(gyro);
     myMPU->cleanGyro(cleanGyro, gyro);
-    float gyro1rawx = cleanGyro[0];
-    float gyro1rawy = cleanGyro[1];
-    float gyro1rawz = cleanGyro[2];
-    */
+    gyroReadingsRAW1[bufPosition][0] = cleanGyro[0];
+    gyroReadingsRAW1[bufPosition][1] = cleanGyro[1];
+    gyroReadingsRAW1[bufPosition][2] = cleanGyro[2];
 }
 void filternewestValues(){
   //read alts
@@ -180,8 +191,14 @@ void filternewestValues(){
   }
     alt1FILTER[bufPosition] = filterData(&previousErrorAltReadings1, MPLSensorError, MPLSensorPredConst, previousFilterAltReadings1, alt1RAW[bufPosition]);
     previousFilterAltReadings1 = alt1FILTER[bufPosition];
-  //read MPUs
-
+  //read gyross
+  if(previousFilterGyroReadings1[0] == NULL || previousFilterGyroReadings1[0] == 0.0){
+    previousFilterAltReadings1 = alt1RAW[bufPosition];
+  }
+    for(int i = 0; i < 3; i++){
+      gyroReadingsFILTER1[bufPosition][i] = filterData(&previousErrorGyroReadings1[i], MPUSensorError, MPUSensorPredConst, previousFilterGyroReadings1[i], gyroReadingsRAW1[bufPosition][i]);
+    }
+    previousFilterAltReadings1 = alt1FILTER[bufPosition];
 
 }
 
@@ -314,13 +331,13 @@ float filterData(float* predictionError, float sensorError, float predictConstan
   //Predict:
   float filteredReading = predictConstant*previousPredict;
   *predictionError = predictConstant * (*predictionError) * predictConstant;
-  Serial.print("Predict Stage: Filtered:");
-  Serial.println(filteredReading);
+  //Serial.print("Predict Stage: Filtered:");
+  //Serial.println(filteredReading);
   //Update:
   float Gain = (*predictionError)/(*predictionError + sensorError);
   filteredReading = filteredReading + Gain * (reading - filteredReading);
   *predictionError = (1-Gain) * (*predictionError);
-  Serial.print("Update Stage: Error:");
-  Serial.println(filteredReading);
+  //Serial.print("Update Stage: Error:");
+  //Serial.println(filteredReading);
   return filteredReading;
 }
