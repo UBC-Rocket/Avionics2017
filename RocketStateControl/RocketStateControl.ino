@@ -77,6 +77,84 @@ MPL* PSensor;
 /*
  * State Machine Initialization
  */
+
+
+
+//size of each buffer
+
+
+//the posistion in the buffers
+int bufPosition = 1;
+/*
+ * The Buffer for each seonsor type
+ */
+//-----------------------
+//MPU 
+//find these by trial and error
+    float MPUSenorError = 0;
+    float MPUSenorPredConst = 0;
+    
+//Buffers
+//MPU1
+ #define BUFFER_SIZE 100
+  float previousErrorGyroReadings1 = 1;
+  float previousErrorAccelReadings1 = 1;
+  float previousErrorMagReadings1 = 1;
+  
+  int16_t gyroReadingsRAW1[BUFFER_SIZE][3];
+  int16_t accelReadingsRAW1[BUFFER_SIZE][3];
+  int16_t magReadingsRAW1[BUFFER_SIZE][3];
+
+  int16_t gyroReadingsFILTER1[BUFFER_SIZE][3];
+  int16_t accelReadingsFILTER1[BUFFER_SIZE][3];
+  int16_t magReadingsFILTER1[BUFFER_SIZE][3];
+  
+//MPU2
+
+
+  float previousErrorGyroReadings2 = 1;
+  float previousErrorAccelReadings2 = 1;
+  float previousErrorMagReadings2 = 1;
+  
+  int16_t gyroReadingsRAW2[BUFFER_SIZE][3];
+  int16_t accelReadingsRAW2[BUFFER_SIZE][3];
+  int16_t magReadingsRAW2[BUFFER_SIZE][3];
+  
+  int16_t gyroReadingsFILTER2[BUFFER_SIZE][3];
+  int16_t accelReadingsFILTER2[BUFFER_SIZE][3];
+  int16_t magReadingsFILTER2[BUFFER_SIZE][3];
+  
+  
+//MPU3
+
+  
+  float previousErrorGyroReadings3 = 1;
+  float previousErrorAccelReadings3 = 1;
+  float previousErrorMagReadings3 = 1;
+  
+  int16_t gyroReadingsFILTER3[BUFFER_SIZE][3];
+  int16_t accelReadingsFILTER3[BUFFER_SIZE][3];
+  int16_t magReadingsFILTER3[BUFFER_SIZE][3];
+  
+  int16_t gyroReadingsRAW3[BUFFER_SIZE][3];
+  int16_t accelReadingsRAW3[BUFFER_SIZE][3];
+  int16_t magReadingsRAW3[BUFFER_SIZE][3];
+
+
+
+
+
+void loadnewestRawValues(){
+  //read alts
+    
+
+  //read MPUs
+
+    
+}
+
+
+
 Rocket rocket(RESET, RESET);
 
 /*

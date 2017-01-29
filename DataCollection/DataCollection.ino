@@ -7,7 +7,7 @@ bool w = false;
 
 MPL* PSensor;
 DataCollection* collector;
-
+int i;
 
 void setup() {
   delay(1000);
@@ -16,7 +16,7 @@ void setup() {
   collector = new DataCollection();
 
   Serial.begin(9600);
-  
+  i = 0;
   delay(500);
 
    
@@ -24,7 +24,12 @@ void setup() {
 
 void loop() {
   delay(04);
-
+  if(i > 250){
+    i=0;
+    Serial.println(i);
+  }
+  i++;
+  
   collector->filterData(PSensor);
 
 }
