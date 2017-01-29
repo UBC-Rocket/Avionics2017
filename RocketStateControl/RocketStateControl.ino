@@ -89,18 +89,18 @@ int bufPosition = 0;
  * The Buffer for each seonsor type
  */
 //-----------------------
-//MPU 
+//MPU
 //find these by trial and error
     float MPUSenorError = 0.75;
     float MPUSenorPredConst = 0.75;
-    
+
 //Buffers
 //MPU1
  #define BUFFER_SIZE 100
   float previousErrorGyroReadings1 = 1;
   float previousErrorAccelReadings1 = 1;
   float previousErrorMagReadings1 = 1;
-  
+
   int16_t gyroReadingsRAW1[BUFFER_SIZE][3];
   int16_t accelReadingsRAW1[BUFFER_SIZE][3];
   int16_t magReadingsRAW1[BUFFER_SIZE][3];
@@ -108,34 +108,34 @@ int bufPosition = 0;
   int16_t gyroReadingsFILTER1[BUFFER_SIZE][3];
   int16_t accelReadingsFILTER1[BUFFER_SIZE][3];
   int16_t magReadingsFILTER1[BUFFER_SIZE][3];
-  
+
 //MPU2
 
 
   float previousErrorGyroReadings2 = 1;
   float previousErrorAccelReadings2 = 1;
   float previousErrorMagReadings2 = 1;
-  
+
   int16_t gyroReadingsRAW2[BUFFER_SIZE][3];
   int16_t accelReadingsRAW2[BUFFER_SIZE][3];
   int16_t magReadingsRAW2[BUFFER_SIZE][3];
-  
+
   int16_t gyroReadingsFILTER2[BUFFER_SIZE][3];
   int16_t accelReadingsFILTER2[BUFFER_SIZE][3];
   int16_t magReadingsFILTER2[BUFFER_SIZE][3];
-  
-  
+
+
 //MPU3
 
-  
+
   float previousErrorGyroReadings3 = 1;
   float previousErrorAccelReadings3 = 1;
   float previousErrorMagReadings3 = 1;
-  
+
   int16_t gyroReadingsFILTER3[BUFFER_SIZE][3];
   int16_t accelReadingsFILTER3[BUFFER_SIZE][3];
   int16_t magReadingsFILTER3[BUFFER_SIZE][3];
-  
+
   int16_t gyroReadingsRAW3[BUFFER_SIZE][3];
   int16_t accelReadingsRAW3[BUFFER_SIZE][3];
   int16_t magReadingsRAW3[BUFFER_SIZE][3];
@@ -144,32 +144,37 @@ int bufPosition = 0;
 //-----------------------
 //ALT
 //find these by trial and error
-    float MPLSenorError = 0.75;
-    float MPLSenorPredConst = 0.75;
-    
+    float MPLSensorError = 0.75;
+    float MPLSensorPredConst = 0.75;
+
 //Buffers
 //ATL1
-  float previousAltReadings1 = 1;
-
-  int16_t alt1RAW[BUFFER_SIZE][3];
-  int16_t alt1FILTER[BUFFER_SIZE][3];
+  float previousErrorAltReadings1 = 1;
+  float previousFilterAltReadings1;
+  float alt1RAW[BUFFER_SIZE];
+  float alt1FILTER[BUFFER_SIZE];
 
 
 void loadnewestRawValues(){
   //read alts
-    PSensor->readAltitude();
-  
-  //read MPUs
-
-    
+    alt1RAW[bufPosition] = PSensor->readAltitude();
+  //read gyros
+    /*myMPU->readGyro(gyro);
+    myMPU->cleanGyro(cleanGyro, gyro);
+    float gyro1rawx = cleanGyro[0];
+    float gyro1rawy = cleanGyro[1];
+    float gyro1rawz = cleanGyro[2];
+    */
 }
 void filternewestValues(){
   //read alts
-   
-  
+  if(previousFilterAltReadings1 == NULL);
+    previousErrorAltReadings1 = alt1RAW[bufPosition];
+   alt1FILTER[bufPosition] = filterData(previousErrorAltReadings1*, PSensor->ERROR, PSensor->PREDICT_CONSTANT, previousFilterAltReadings1, alt1RAW[bufPosition]);
+
   //read MPUs
 
-    
+
 }
 
 
@@ -197,7 +202,7 @@ void setup() {
   pinMode(DROGUE_IGNITION_CIRCUIT, OUTPUT);
   pinMode(PAYLOAD_IGNITION_CIRCUIT, OUTPUT);
 
-  
+
 }
 
 /*
@@ -210,18 +215,18 @@ void loop(){
   digitalWrite(DROGUE_IGNITION_CIRCUIT, LOW);
   digitalWrite(PAYLOAD_IGNITION_CIRCUIT, LOW);
 
- 
+
  loadnewestRawValues();
   /*
    * Print MPL Data
    */
-  altitude = PSensor->readAltitude();
-  
+  //altitude = PSensor->readAltitude();
+
   Serial.println("MPL Data: ");
   Serial.print ("Offset: ");
   Serial.println(PSensor->getOffset());
   Serial.print("Current Altitude: ");
-  Serial.println(filtered_alt);
+  Serial.println(alt1FILTER[bufPosition]);
 
   /*
    * Print MPU Data
