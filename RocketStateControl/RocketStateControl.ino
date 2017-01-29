@@ -91,8 +91,8 @@ int bufPosition = 0;
 //-----------------------
 //MPU
 //find these by trial and error
-    float MPUSenorError = 0.75;
-    float MPUSenorPredConst = 0.75;
+    float MPUSensorError = 0.75;
+    float MPUSensorPredConst = 1.2;
 
 //Buffers
 //MPU1
@@ -144,8 +144,8 @@ int bufPosition = 0;
 //-----------------------
 //ALT
 //find these by trial and error
-    float MPLSensorError = 0.75;
-    float MPLSensorPredConst = 0.75;
+    float MPLSensorError = 4;
+    float MPLSensorPredConst = 1.000;
 
 //Buffers
 //ATL1
@@ -156,6 +156,13 @@ int bufPosition = 0;
 
 
 void loadnewestRawValues(){
+  if (bufPosition >= BUFFER_SIZE){
+    for(int i = 0; i < BUFFER_SIZE; i++){
+      alt1RAW[i] = 0.0;
+      alt1FILTER[i] = 0.0;
+    }
+    bufPosition = 0;
+  }
   //read alts
     alt1RAW[bufPosition] = PSensor->readAltitude();
   //read gyros
@@ -168,10 +175,11 @@ void loadnewestRawValues(){
 }
 void filternewestValues(){
   //read alts
-  if(previousFilterAltReadings1 == NULL);
-    previousErrorAltReadings1 = alt1RAW[bufPosition];
-   alt1FILTER[bufPosition] = filterData(previousErrorAltReadings1*, PSensor->ERROR, PSensor->PREDICT_CONSTANT, previousFilterAltReadings1, alt1RAW[bufPosition]);
-
+  if(previousFilterAltReadings1 == NULL || previousFilterAltReadings1 == 0.0){
+    previousFilterAltReadings1 = alt1RAW[bufPosition];
+  }
+    alt1FILTER[bufPosition] = filterData(&previousErrorAltReadings1, MPLSensorError, MPLSensorPredConst, previousFilterAltReadings1, alt1RAW[bufPosition]);
+    previousFilterAltReadings1 = alt1FILTER[bufPosition];
   //read MPUs
 
 
@@ -217,6 +225,7 @@ void loop(){
 
 
  loadnewestRawValues();
+ filternewestValues();
   /*
    * Print MPL Data
    */
@@ -225,9 +234,10 @@ void loop(){
   Serial.println("MPL Data: ");
   Serial.print ("Offset: ");
   Serial.println(PSensor->getOffset());
-  Serial.print("Current Altitude: ");
+  Serial.print("Current Raw Altitude: ");
+  Serial.println(alt1RAW[bufPosition]);
+  Serial.print("Current Filtered Altitude: ");
   Serial.println(alt1FILTER[bufPosition]);
-
   /*
    * Print MPU Data
    */
@@ -296,16 +306,21 @@ void loop(){
       break;
   }
   rocket.currentState = rocket.nextState;
+  bufPosition++;
+  delay(50);
 }
 
 float filterData(float* predictionError, float sensorError, float predictConstant, float previousPredict, float reading) {
   //Predict:
   float filteredReading = predictConstant*previousPredict;
   *predictionError = predictConstant * (*predictionError) * predictConstant;
-
+  Serial.print("Predict Stage: Filtered:");
+  Serial.println(filteredReading);
   //Update:
   float Gain = (*predictionError)/(*predictionError + sensorError);
   filteredReading = filteredReading + Gain * (reading - filteredReading);
   *predictionError = (1-Gain) * (*predictionError);
+  Serial.print("Update Stage: Error:");
+  Serial.println(filteredReading);
   return filteredReading;
 }

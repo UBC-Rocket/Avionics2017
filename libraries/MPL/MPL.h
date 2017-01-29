@@ -12,8 +12,7 @@ typedef short int16_t;
 #define STD_PRESS 101326	// Standard pressure at sea level
 
 #define NUM_SAMPLES_AVG 100 // Number of samples we want to average
-#define ERROR 0.75
-#define PREDICT_CONSTANT 1.2
+
 class MPL {
 
   int num_samples_avg;
@@ -22,7 +21,8 @@ class MPL {
   float ground_level;
 
 public:
-
+  float error;
+  float predictConstant;
   MPL(bool pickWire1);
 
 
