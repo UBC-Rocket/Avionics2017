@@ -3,10 +3,14 @@
  * Here are all the functions that the rocket can use 
  */
 
-//#include "Arduino.h"
 #include "Rocket.h"
 #include "i2c_t3.h"
 #include "MPU.h"
+#include "MPL.h"
+
+#define SIM_LAUNCH_ACCEL 	0
+#define SIM_BURNOUT_ACCEL	0
+#define NUM_CHECKS 			4
 
 // Rocket State Contructor
 Rocket::Rocket(int initialCurrentState, int initialNextState)
@@ -19,39 +23,35 @@ Rocket::Rocket(int initialCurrentState, int initialNextState)
 /*
  * Reset function will be called once at the beginning of each use
  * Calibrate all the sensors
+ * (I low key think we should get rid of this)
  */
 void Rocket::reset() {
 	//do stuff here 
 }
 
-/*
- * Standby
- * check if the rocket has launched 
- * if yes, return TRUE 
- * if no, return FALSE 
- */
-bool Rocket::standby(){
-  bool launch = false;
-  
-  //checking for a change in altitude
-  //if we are seeing enough change in altitude, set launch = true
-
-  return launch;
+bool Rocket::detect_launch(int curr_accel, int launch_count) {
+	//giant spike in acceleration 
+	//return true when we've seen 4 positive accelerations in a row 
+	
+	if (curr_accel > SIM_LAUNCH_ACCEL)
+		launch_count++;
+	
+	if (launch_count > NUM_CHECKS)
+		return true;
+	else 
+		return false;	
 }
 
-/*
- * Powered_Ascent 
- * see if our flight is powered
- * if no, return TRUE 
- * if yes, return FALSE 
- */
-bool Rocket::powered_ascent(){
-	bool motorOff = false;
+bool Rocket::detect_burnout(int curr_accel, int prev_accel, int burnout_count) {
+	//giant drop in acceleration, max velocity (baby delay)
 	
-	//check if ascent is powered
-	//if not, motorOff = true
+	if ((prev_accel - curr_accel) > SIM_BURNOUT_ACCEL ) //will the data be stable enough for this..?
+		burnout_count++;
 	
-	return motorOff;
+	if (burnout_count > NUM_CHECKS)
+		return true;
+	else 
+		return false;
 }
 
 /*
@@ -61,6 +61,9 @@ bool Rocket::powered_ascent(){
  * if no, return FALSE  
  */
 bool Rocket::coasting(){
+	//TODO: figure out what kind of data threshold we should be looking for
+	//looking at acceleration data 
+	
 	bool apogee = false;
 	
 	//if we think we're at apogee, apogee = true
@@ -134,8 +137,12 @@ bool Rocket::initial_descent(){
  * send current to ignite the gunpowder
  * return true once the main chute has deployed 
  */
-bool Rocket::deploy_main(){
+bool Rocket::deploy_main(float curr_altitude){
 	bool mainDeployComplete = false;
+	
+	if (curr_altitude == 1500){
+		//drive that PWM signal 
+	}
 	
 	//send the signal to deploy the main
 	//do we maybe want to double check that it actually happened?
@@ -150,6 +157,6 @@ bool Rocket::deploy_main(){
  * Final_Descent 
  */
 void Rocket::final_descent(){
-	//lol what do we actually do here 
+	//only save data to SD?
 }
 
