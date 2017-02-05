@@ -8,8 +8,8 @@
 #include "MPU.h"
 #include "MPL.h"
 
-#define SIM_LAUNCH_ACCEL 	0
-#define SIM_BURNOUT_ACCEL	0
+#define SIM_LAUNCH_ACCEL 	40 //assuming sims are accurate, > 40
+#define SIM_BURNOUT_ACCEL	4
 #define NUM_CHECKS 			4
 
 // Rocket State Contructor
@@ -42,13 +42,13 @@ bool Rocket::detect_launch(int curr_accel, int launch_count) {
 		return false;	
 }
 
-bool Rocket::detect_burnout(int curr_accel, int prev_accel, int burnout_count) {
+bool Rocket::detect_burnout(int curr_accel, int prev_accel, int burnout_count, unsigned long launch_time, unsigned long curr_time) {
 	//giant drop in acceleration, max velocity (baby delay)
 	
 	if ((prev_accel - curr_accel) > SIM_BURNOUT_ACCEL ) //will the data be stable enough for this..?
 		burnout_count++;
 	
-	if (burnout_count > NUM_CHECKS)
+	if ((burnout_count > NUM_CHECKS) || (curr_time > (launch_time + 4500)))
 		return true;
 	else 
 		return false;
@@ -123,12 +123,14 @@ bool Rocket::deploy_payload(){
  * if yes, return TRUE 
  * if no, return FALSE
  */
-bool Rocket::initial_descent(){
-	bool deployMainSpot = false; //cant think of a more reasonable name 
+bool Rocket::detect_main_alt(float curr_altitude){
 	
-	//if we think now would be a good time to deploy the main, deployMainSpot = true
+	if (curr_altitude == 1500){
+		return true;
+	}
 	
-	return deployMainSpot;
+	else
+		return false;
   
 }
 
@@ -137,12 +139,8 @@ bool Rocket::initial_descent(){
  * send current to ignite the gunpowder
  * return true once the main chute has deployed 
  */
-bool Rocket::deploy_main(float curr_altitude){
+bool Rocket::deploy_main(){
 	bool mainDeployComplete = false;
-	
-	if (curr_altitude == 1500){
-		//drive that PWM signal 
-	}
 	
 	//send the signal to deploy the main
 	//do we maybe want to double check that it actually happened?
