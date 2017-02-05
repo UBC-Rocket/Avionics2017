@@ -25,7 +25,7 @@ int16_t gyro[3];
 int16_t linx, liny, linz;
 float cleanGyro[3];
 unsigned long elapsed = 0;
-MPU* test;
+MPU test();
 long quat[4];
 
 
@@ -33,12 +33,12 @@ void setup() {
   Serial.begin(9600);
   delay(500);
   Serial.println("hi");
-  test = new MPU(0, ADDR);
+  test.begin(0, ADDR);
   Serial.print("Loading DMP ");
-  Serial.println(test->loadDMP());
+  Serial.println(test.loadDMP());
 
   Serial.print("Enabling DMP ");
-  Serial.println(test->enableDMP(1));
+  Serial.println(test.enableDMP(1));
 }
 
 
@@ -48,7 +48,7 @@ void loop() {
   elapsed = micros() - elapsed;
   Serial.println("Running: ");
   Serial.print("Reading DMP ");
-//  Serial.println(test->readDMP(&quat));
+//  Serial.println(test.readDMP(&quat));
   Serial.println("Quat data: ");
   
   Serial.println(quat[0]);
