@@ -23,7 +23,7 @@ public:
 
   void cleanGyro(float *cleanData, int16_t *data);
 
-  int readDMP(long *quat);
+  int readDMP(long quat[]);
   int loadDMP();
 
   int enableDMP(bool enable);

@@ -254,10 +254,10 @@ int MPU::begin(bool whichWire, uint8_t Addr) {
 
   if(wire) {
     Wire1.begin();
-    Wire1.setDefaultTimeout(50);
+    Wire1.setDefaultTimeout(2500);
   } else {
     Wire.begin();
-    Wire.setDefaultTimeout(50);
+    Wire.setDefaultTimeout(2500);
   }
 
   debug("TWI initialized");
@@ -269,16 +269,16 @@ int MPU::begin(bool whichWire, uint8_t Addr) {
   if(err = write(USR_CNTRL, 0)) debug(err);
   debug("Library Initialized");
   debug("WHOAMI (should be 0x73 = 115): ");
+  debug(selfTest());
 
   return selfTest();
 }
 
-int selfTest() {
+int MPU::selfTest() {
   uint8_t test;
   test = read(WHOAMI);
-  if(test != 0x73) return -1;
 
-  return 0;
+  return test;
 }
 
 int MPU::initGyro(uint16_t fullScale) {
@@ -358,13 +358,13 @@ int MPU::readMag(int16_t* data) {
   return 0;
 }
 
-void MPU::cleanGyro(float*cleanData, int16_t* data) {
+void MPU::cleanGyro(float* cleanData, int16_t* data) {
   for(int i = 0; i < 3; i++) {
     cleanData[i] = data[i] * gyroFS / shortFS;
   }
 }
 
-int MPU::readDMP(long *quat) {
+int MPU::readDMP(long quat[]) {
   int err;
   uint8_t data[16];
   unsigned short fifoCount;
@@ -372,6 +372,8 @@ int MPU::readDMP(long *quat) {
 
   if(err = read(FIFO_COUNT, 2, tmp)) return err;
   fifoCount = (tmp[0] << 8) | tmp[1];
+  debug("Data available in FIFO: " + (String)fifoCount);
+  if(fifoCount == 0) return -1;
 
   if(err = read(FIFO_RW, 16, data)) return err;
 
@@ -394,7 +396,7 @@ int MPU::loadDMP() {
 
     debug("About to write DMP memory");
     if(err = writeMem(pos, length, &dmp_memory[pos])) return err;
-    debug("DMP written to memory");
+    debug("DMP written to memory\r\n");
     if(err = readMem(pos, length, chunkTest)) return err;
     for(int i = 0; i < length; i++) {
       if(chunkTest[i] != dmp_memory[pos+i]) return -1; //verify memory was written correctly
@@ -431,6 +433,17 @@ int MPU::enableDMP(bool enable) {
 
   if(err = write(USR_CNTRL, uctrl)) return err;
 
+  //set dmp fifo rate_div
+  short sampleDiv = 200 / 25 - 1;
+  uint8_t tmp[2];
+  tmp[0] = ((sampleDiv >> 8) & 0xFF);
+  tmp[1] = (sampleDiv & 0xFF);
+
+  writeMem(534, 2, &tmp[0]);
+
+  uint8_t rateRegs[12] = {0xFE, 0xF2, 0xAB, 0xC4, 0xAA, 0xF1, 0xDF, 0xDF, 0xBB, 0xAF, 0xDF, 0xDF};
+  writeMem(2753, 12, &rateRegs[0]);
+
   return 0;
 }
 
@@ -447,8 +460,9 @@ int MPU::writeMem(uint16_t addr, uint8_t length, uint8_t *data) {
 
   addrBytes[0] = (addr>>8);
   addrBytes[1] = (addr & 0xFF);
+  debug("DMP Write Length: " + (String)length);
 
-  if(addrBytes[1] + length > 0xFF) return -1; //do not write if it will cross bank boundaries, banks are 256 bytes long
+  if(addrBytes[1] + length > 0x100) return -2; //do not write if it will cross bank boundaries, banks are 256 bytes long
 
   if(err = write(MEM_REG_ADDR, 2, addrBytes)) return err;
   if(err = write(MEM_DATA_ADDR, length, data)) return err;
@@ -486,7 +500,6 @@ int MPU::write(uint8_t reg, uint8_t length, uint8_t *data) {
     Wire.beginTransmission(addr);
     if(Wire.write(reg) != 1) return -1;
     if(Wire.write(data, length) != length) return -2;
-    debug("About to write data");
     return Wire.endTransmission(true);
   }
 }
