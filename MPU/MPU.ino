@@ -25,16 +25,22 @@ int16_t gyro[3];
 int16_t linx, liny, linz;
 float cleanGyro[3];
 unsigned long elapsed = 0;
-MPU* test;
+MPU test;
+long quat[4];
+double angles[3];
 
 
 void setup() {
-  Serial.begin(9600);
   delay(500);
+  Serial.begin(9600);
+  delay(2000);
   Serial.println("hi");
-  test = new MPU(0, ADDR);
-  Serial.print("initializing Gyro: ");
-  Serial.println(test->initGyro(250));
+  test.begin(0, ADDR);
+  Serial.println("Loading DMP ");
+  Serial.println(test.loadDMP());
+
+  Serial.println("Enabling DMP ");
+  Serial.println(test.enableDMP(true));
 }
 
 
@@ -42,13 +48,24 @@ void setup() {
 void loop() {
   
   elapsed = micros() - elapsed;
-  Serial.println("running: ");
-  test->readGyro(gyro);
-  test->cleanGyro(cleanGyro, gyro);
-  Serial.println(cleanGyro[0]);
-  Serial.println(cleanGyro[1]);
-  Serial.println(cleanGyro[2]);
-  delay(1000);
+  Serial.println("Running: ");
+  Serial.println("Reading DMP ");
+  while(test.readDMP(quat) == -1)
+  Serial.println(test.readDMP(quat));
+  Serial.println("Quat data: ");
+  
+  Serial.println(quat[0]);
+  Serial.println(quat[1]);
+  Serial.println(quat[2]);
+  Serial.println(quat[3]);
+
+  Serial.println("Angle Data: ");
+  //parseQuat(quat, angles);
+
+  Serial.println(angles[0]);
+  Serial.println(angles[1]);
+  Serial.println(angles[2]);
+  
 
 
 //  x_pos = (x_pos > 360) ? (x_pos - 360) : x_pos;
@@ -59,4 +76,31 @@ void loop() {
 //  y_pos = (y_pos < 360) ? (y_pos + 360) : y_pos;
 //  z_pos = (z_pos < 360) ? (z_pos + 360) : z_pos;
 
+}
+
+
+//quaternion to euler angles from the internet
+void parseQuat(long quat[], double angles[]) {
+  double sqw = quat[0] * quat[0];
+  double sqx = quat[1] * quat[1];
+  double sqy = quat[2] * quat[2];
+  double sqz = quat[3] * quat[3];
+  double unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
+  double test = quat[1] * quat[2] + quat[3] * quat[0];
+  
+  if (test > 0.499*unit) { // singularity at north pole
+    angles[0] = 2 * atan2(quat[1],quat[0]);
+    angles[1] = PI/2;
+    angles[2] = 0;
+    return;
+  }
+  if (test < -0.499*unit) { // singularity at south pole
+    angles[0] = -2 * atan2(quat[1],quat[0]);
+    angles[1] = -PI/2;
+    angles[2] = 0;
+    return;
+  }
+    angles[0] = atan2(2*quat[2]*quat[0]-2*quat[1]*quat[3] , sqx - sqy - sqz + sqw);
+    angles[1] = asin(2*test/unit);
+    angles[2] = atan2(2*quat[1]*quat[0]-2*quat[2]*quat[3] , -sqx + sqy - sqz + sqw);
 }
