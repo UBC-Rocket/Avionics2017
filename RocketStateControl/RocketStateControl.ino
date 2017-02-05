@@ -52,9 +52,9 @@ const int PAYLOAD_IGNITION_CIRCUIT = 8; //pin to nose cone ignition circuit
 /*
  * MPU Initialization
  */
-int16_t gyro[3];
+int16_t* gyro;
 int16_t linx, liny, linz;
-float cleanGyro[3];
+float* cleanGyro;
 unsigned long elapsed = 0;
 MPU* myMPU;
 
@@ -77,6 +77,133 @@ MPL* PSensor;
 /*
  * State Machine Initialization
  */
+
+
+
+//size of each buffer
+
+
+//the posistion in the buffers
+int bufPosition = 0;
+/*
+ * The Buffer for each seonsor type
+ */
+//-----------------------
+//MPU
+//find these by trial and error
+    float MPUSensorError = 0.75;
+    float MPUSensorPredConst = 1.2;
+
+//Buffers
+//MPU1
+ #define BUFFER_SIZE 100
+
+  float previousFilterGyroReadings1[3];
+  float previousFilterAccelReadings1[3];
+  float previousFilterMagReadings1[3];
+  
+  float previousErrorGyroReadings1[3] = {1, 1, 1};
+  float previousErrorAccelReadings1[3] = {1, 1, 1};
+  float previousErrorMagReadings1[3] = {1, 1, 1};
+
+  int16_t gyroReadingsRAW1[BUFFER_SIZE][3];
+  int16_t accelReadingsRAW1[BUFFER_SIZE][3];
+  int16_t magReadingsRAW1[BUFFER_SIZE][3];
+
+  int16_t gyroReadingsFILTER1[BUFFER_SIZE][3];
+  int16_t accelReadingsFILTER1[BUFFER_SIZE][3];
+  int16_t magReadingsFILTER1[BUFFER_SIZE][3];
+
+//MPU2
+
+  float previousFilterGyroReadings2[3];
+  float previousFilterAccelReadings2[3];
+  float previousFilterMagReadings2[3];
+  
+  float previousErrorGyroReadings2[3] = {1, 1, 1};
+  float previousErrorAccelReadings2[3] = {1, 1, 1};
+  float previousErrorMagReadings2[3] = {1, 1, 1};
+
+  int16_t gyroReadingsRAW2[BUFFER_SIZE][3];
+  int16_t accelReadingsRAW2[BUFFER_SIZE][3];
+  int16_t magReadingsRAW2[BUFFER_SIZE][3];
+
+  int16_t gyroReadingsFILTER2[BUFFER_SIZE][3];
+  int16_t accelReadingsFILTER2[BUFFER_SIZE][3];
+  int16_t magReadingsFILTER2[BUFFER_SIZE][3];
+
+
+//MPU3
+
+  float previousFilterGyroReadings3[3];
+  float previousFilterAccelReadings3[3];
+  float previousFilterMagReadings3[3];
+  
+
+  float previousErrorGyroReadings3[3] = {1, 1, 1};
+  float previousErrorAccelReadings3[3] = {1, 1, 1};
+  float previousErrorMagReadings3[3] = {1, 1, 1};
+
+  int16_t gyroReadingsFILTER3[BUFFER_SIZE][3];
+  int16_t accelReadingsFILTER3[BUFFER_SIZE][3];
+  int16_t magReadingsFILTER3[BUFFER_SIZE][3];
+
+  int16_t gyroReadingsRAW3[BUFFER_SIZE][3];
+  int16_t accelReadingsRAW3[BUFFER_SIZE][3];
+  int16_t magReadingsRAW3[BUFFER_SIZE][3];
+
+
+//-----------------------
+//ALT
+//find these by trial and error
+    float MPLSensorError = 4;
+    float MPLSensorPredConst = 1.000;
+
+//Buffers
+//ATL1
+  float previousErrorAltReadings1 = 1;
+  float previousFilterAltReadings1;
+  float alt1RAW[BUFFER_SIZE];
+  float alt1FILTER[BUFFER_SIZE];
+
+
+void loadnewestRawValues(){
+  if (bufPosition >= BUFFER_SIZE){
+    for(int i = 0; i < BUFFER_SIZE; i++){
+      alt1RAW[i] = 0.0;
+      alt1FILTER[i] = 0.0;
+    }
+    bufPosition = 0;
+  }
+  //read alts
+    alt1RAW[bufPosition] = PSensor->readAltitude();
+  //read gyros
+    myMPU->readGyro(gyro);
+    myMPU->cleanGyro(cleanGyro, gyro);
+    gyroReadingsRAW1[bufPosition][0] = cleanGyro[0];
+    gyroReadingsRAW1[bufPosition][1] = cleanGyro[1];
+    gyroReadingsRAW1[bufPosition][2] = cleanGyro[2];
+}
+void filternewestValues(){
+  //read alts
+  if(previousFilterAltReadings1 == NULL || previousFilterAltReadings1 == 0.0){
+    previousFilterAltReadings1 = alt1RAW[bufPosition];
+  }
+    alt1FILTER[bufPosition] = filterData(&previousErrorAltReadings1, MPLSensorError, MPLSensorPredConst, previousFilterAltReadings1, alt1RAW[bufPosition]);
+    previousFilterAltReadings1 = alt1FILTER[bufPosition];
+  //read gyross
+  if(previousFilterGyroReadings1[0] == NULL || previousFilterGyroReadings1[0] == 0.0){
+    previousFilterAltReadings1 = alt1RAW[bufPosition];
+  }
+    for(int i = 0; i < 3; i++){
+      gyroReadingsFILTER1[bufPosition][i] = filterData(&previousErrorGyroReadings1[i], MPUSensorError, MPUSensorPredConst, previousFilterGyroReadings1[i], gyroReadingsRAW1[bufPosition][i]);
+    }
+    previousFilterAltReadings1 = alt1FILTER[bufPosition];
+
+}
+
+
+
 Rocket rocket(RESET, RESET);
 
 /*
@@ -100,25 +227,9 @@ void setup() {
   pinMode(DROGUE_IGNITION_CIRCUIT, OUTPUT);
   pinMode(PAYLOAD_IGNITION_CIRCUIT, OUTPUT);
 
-  x = 0;
-}
-void initializeKalman(float altitude){
-  Previous_Predict = altitude;
-  Predict_Error = 1;
-  Predict_Constant = 1.1; //Need to determine experimentally
-  return 0;
-}
-float kalmanFilter (float altitude){
-  //Predict:
-  float Predicted_Alt = Predict_Constant *Previous_Predict;
-  Predict_Error = Predict_Constant * Predict_Error *Predict_Constant;
 
-  //Update:
-  Gain = Predict_Error/ (Predict_Error + Altimeter_Error);
-  Predicted_Alt = Predicted_Alt + Gain * (altitude - Predicted_Alt);
-  Predict_Error = (1- Gain) * Predict_Error;
-  return Predicted_Alt;
 }
+
 /*
  * main loop function
  * uses a switch statement to switch between states
@@ -129,25 +240,21 @@ void loop(){
   digitalWrite(DROGUE_IGNITION_CIRCUIT, LOW);
   digitalWrite(PAYLOAD_IGNITION_CIRCUIT, LOW);
 
-  float altitude = 0;
-  float filtered_alt;
-  Serial.println(x);
-  x++;
 
+ loadnewestRawValues();
+ filternewestValues();
   /*
    * Print MPL Data
    */
-  altitude = PSensor->readAltitude();
-  if(x == 0){
-    initializeKalman(altitude);
-  }
-  filtered_alt = kalmanFilter(altitude);
+  //altitude = PSensor->readAltitude();
+
   Serial.println("MPL Data: ");
   Serial.print ("Offset: ");
   Serial.println(PSensor->getOffset());
-  Serial.print("Current Altitude: ");
-  Serial.println(filtered_alt);
-
+  Serial.print("Current Raw Altitude: ");
+  Serial.println(alt1RAW[bufPosition]);
+  Serial.print("Current Filtered Altitude: ");
+  Serial.println(alt1FILTER[bufPosition]);
   /*
    * Print MPU Data
    */
@@ -216,4 +323,21 @@ void loop(){
       break;
   }
   rocket.currentState = rocket.nextState;
+  bufPosition++;
+  delay(50);
+}
+
+float filterData(float* predictionError, float sensorError, float predictConstant, float previousPredict, float reading) {
+  //Predict:
+  float filteredReading = predictConstant*previousPredict;
+  *predictionError = predictConstant * (*predictionError) * predictConstant;
+  //Serial.print("Predict Stage: Filtered:");
+  //Serial.println(filteredReading);
+  //Update:
+  float Gain = (*predictionError)/(*predictionError + sensorError);
+  filteredReading = filteredReading + Gain * (reading - filteredReading);
+  *predictionError = (1-Gain) * (*predictionError);
+  //Serial.print("Update Stage: Error:");
+  //Serial.println(filteredReading);
+  return filteredReading;
 }

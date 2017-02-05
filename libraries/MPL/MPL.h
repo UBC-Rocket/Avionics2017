@@ -2,8 +2,16 @@
 #define MPL_H
 
 #include <inttypes.h>
+#include <Arduino.h>
 
 typedef short int16_t;
+
+#define byte uint8_t
+#define ADDRESS 0x60		// Sensor I2C address
+#define STD_TEMP 20			// Standard temperature at sea level
+#define STD_PRESS 101326	// Standard pressure at sea level
+
+#define NUM_SAMPLES_AVG 100 // Number of samples we want to average
 
 class MPL {
 
@@ -13,8 +21,10 @@ class MPL {
   float ground_level;
 
 public:
-
+  float error;
+  float predictConstant;
   MPL(bool pickWire1);
+
 
   // Sensor configuration functions
   void resetChip();
@@ -29,7 +39,7 @@ public:
 
   // Read data functions
   float readAltitude();
-  float readAvgAltitude();
+
   float readTemp();
   uint8_t readByte(uint8_t reg);
 
@@ -37,8 +47,9 @@ public:
   int initTemp(uint8_t fullScale);
 
 private:
+  void debug(String msg);
   // Writes a given byte to a given register
-  uint8_t writeByte(uint8_t regAddr, uint8_t value);
+  byte writeByte(byte _regAddr, byte _value);
 
   int readBytes(uint8_t reg, uint8_t length, uint8_t* data);
 };

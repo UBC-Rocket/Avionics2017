@@ -10,29 +10,26 @@ float x_pos, y_pos, z_pos;
 unsigned long elapsed = 0;
 bool w = false;
 
-
 MPL* PSensor;
 
 void setup() {
-  PSensor = new MPL(w);
-  PSensor->init();
-  PSensor->setGround(); //dont know why it only works if you call it from here...
-  
-  Serial.begin(9600);
+  delay(1000);
 
+  PSensor = new MPL(w);
+
+  Serial.begin(9600);
+  
   delay(500);
   x = 0;
    
 }
 
-
-
 void loop() {
-  delay(40);
+  delay(4);
   x++; 
   float altitude = 0;
 
-  altitude = PSensor->readAvgAltitude();
+  altitude = PSensor->readAltitude();
   Serial.print ("Offset: ");
   Serial.println(PSensor->getOffset());
   Serial.print("Current Altitude: "); 
@@ -42,5 +39,4 @@ void loop() {
   Serial.println(x);  
 
 }
-
 
