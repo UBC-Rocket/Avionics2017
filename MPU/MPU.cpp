@@ -319,7 +319,7 @@ int MPU::initMag() {
   if(err = write(SLV0_REG, 0xA)) return err; //set mag regsiter we want to write to to mag internal control register
   if(err = write(SLV0_ADDR, MAG_ADDR | 0b10000000)) return err; //write mag adress to slave0 address register with 1 as high bit to indicate write
 
-  if(err = write(SLV0_CNTRL, (1<<7) | 6)) return err; //setup slave 0 to continuously read, and set the number of bytes to read to 6
+  if(err = write(SLV0_CNTRL, (1<<7) | 7)) return err; //setup slave 0 to continuously read, and set the number of bytes to read to 6
   if(err = write(SLV0_REG, MAG_BASE_REG)) return err; //set slave 0 to read starting at the base register for mag values
   if(err = write(SLV0_ADDR, MAG_ADDR)) return err; //set slave 0 to read from i2c address of mag
   return 0;
@@ -346,8 +346,8 @@ int MPU::readAccel(int16_t[] data) {
   data[2] = rawData[5] | (rawData[4]<<8);
   return 0;
 }
-
-int MPU::readMag(int16_t* data) {
+/*
+int MPU::readMag(int16_t[] data) {
   uint8_t rawData[6];
   int err;
   if(err = read(MAG_BASE, 6, rawData)) return err;
@@ -356,6 +356,26 @@ int MPU::readMag(int16_t* data) {
   data[1] = rawData[3] | (rawData[2]<<8);
   data[2] = rawData[5] | (rawData[4]<<8);
   return 0;
+}*/
+
+int MPU::readMag(int16_t* data) {
+ uint8_t rawData[7];
+ int err;
+
+ if(err = write(SLV0_WRITE, (1<<4) | 0b0001)) return err; //prepare data to write to mag internal control register
+ if(err = write(SLV0_REG, 0xA)) return err; //set mag regsiter we want to write to to mag internal control register
+ if(err = write(SLV0_ADDR, MAG_ADDR | 0b10000000)) return err; //write mag adress to slave0 address register with 1 as high bit to indicate write
+
+ if(err = write(SLV0_REG, MAG_BASE_REG)) return err; //set slave 0 to read starting at the base register for mag values
+ if(err = write(SLV0_ADDR, MAG_ADDR)) return err; //set slave 0 to read from i2c address of mag
+ if(err = write(SLV0_CNTRL, (1<<7) | 7)) return err; //setup slave 0 to continuously read, and set the number of bytes to read to 6
+
+ if(err = read(MAG_BASE, 6, rawData)) return err;
+
+ data[0] = rawData[0] | (rawData[1]<<8);
+ data[1] = rawData[2] | (rawData[3]<<8);
+ data[2] = rawData[4] | (rawData[5]<<8);
+ return 0;
 }
 
 void MPU::cleanGyro(float* cleanData, int16_t* data) {

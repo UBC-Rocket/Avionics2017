@@ -78,8 +78,6 @@ MPL* PSensor;
  * State Machine Initialization
  */
 
-
-
 //size of each buffer
 
 
@@ -166,7 +164,6 @@ int bufPosition = 0;
   float alt1RAW[BUFFER_SIZE];
   float alt1FILTER[BUFFER_SIZE];
 
-
 /*void loadnewestRawValues(){
 
   if (bufPosition >= BUFFER_SIZE) {
@@ -227,18 +224,28 @@ void filternewestValues(){
 
 }*/
 
-
-
 Rocket rocket(STANDBY, STANDBY);
 
+//MPU's error codes
 int accel_error_code;
+int mag_error_code;
+
+//prev and current data
 float curr_accel;
 float prev_accel;
 float curr_altitude; 
+
+//count variables for decisions
 int launch_count = 0;
 int burnout_count = 0;
+
+//time variables
 unsigned long launch_time;
 unsigned long curr_time;
+
+//structures to hold unfiltered data
+int16_t raw_accel_data[3];
+int16_t raw_mag_data[3];
 
 /*
  * maybe sensor related setup?
@@ -249,9 +256,10 @@ void setup() {
   delay(500);
 
   // Initialize MPU
-  Serial.println(myMPU.begin(0, 0x68));
+  Serial.println(myMPU.begin(1, 0x68));
   myMPU.initGyro(250);
   myMPU.initAccel(2); // lol idk which number should go here
+  myMPU.initMag();
 
   // Initialize MPL
   PSensor = new MPL(w);
@@ -259,7 +267,6 @@ void setup() {
   //Initialize pins for ignition circuits as outputs
   pinMode(DROGUE_IGNITION_CIRCUIT, OUTPUT);
   pinMode(PAYLOAD_IGNITION_CIRCUIT, OUTPUT);
-
 
 }
 
@@ -270,33 +277,34 @@ void setup() {
  */
 void loop(){
 
-  Serial.println("in loop");
   Serial.print("Current State: ");
   Serial.println(rocket.currentState);
   Serial.print("Next State: ");
   Serial.println(rocket.nextState);
 
-  
   //make sure ignition pins stay low!
   digitalWrite(DROGUE_IGNITION_CIRCUIT, LOW);
   digitalWrite(PAYLOAD_IGNITION_CIRCUIT, LOW);
 
   curr_time = millis();
 
-  int16_t raw_accel_data[3];
+  //keeping track of MPU's error codes, would ideally be 0
   accel_error_code = myMPU.readAccel(raw_accel_data); //this is also the wrong number
+  //Serial.println("init mag " + (String)myMPU.initMag());
+  mag_error_code = myMPU.readMag(raw_mag_data);
+  
   curr_altitude = PSensor->readAltitude();
 
-  Serial.print("Current Altitude: ");
-  Serial.println(curr_altitude);
-  Serial.print("Current Acceleration: ");
-  Serial.println(raw_accel_data[0]);
-  Serial.println("Accel Error Code: " + (String)accel_error_code);
+  Serial.println("Current Altitude: " + (String)curr_altitude);
+  Serial.println("Current Acceleration: " + (String)raw_accel_data[0]);
+  Serial.println("Accel Error Code: " + (String)accel_error_code);            //ideally 0
+  
+  Serial.println("Current Mag shit: " + (String)raw_mag_data[0]);
+  Serial.println("Mag Error Code: " + (String)mag_error_code);                //ideally 0
+  
 
   //loadnewestRawValues();
   //filternewestValues();
-
-  Serial.println("before switch");
   
   switch (rocket.currentState){
     case RESET:
