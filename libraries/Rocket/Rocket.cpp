@@ -29,7 +29,7 @@ void Rocket::reset() {
 	//do stuff here 
 }
 
-bool Rocket::detect_launch(int curr_accel, int launch_count) {
+bool Rocket::detect_launch(float curr_accel, int launch_count) {
 	//giant spike in acceleration 
 	//return true when we've seen 4 positive accelerations in a row 
 	
@@ -42,7 +42,7 @@ bool Rocket::detect_launch(int curr_accel, int launch_count) {
 		return false;	
 }
 
-bool Rocket::detect_burnout(int curr_accel, int prev_accel, int burnout_count, unsigned long launch_time, unsigned long curr_time) {
+bool Rocket::detect_burnout(float curr_accel, float prev_accel, int burnout_count, unsigned long launch_time, unsigned long curr_time) {
 	//giant drop in acceleration, max velocity (baby delay)
 	
 	if ((prev_accel - curr_accel) > SIM_BURNOUT_ACCEL ) //will the data be stable enough for this..?

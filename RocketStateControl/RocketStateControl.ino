@@ -56,7 +56,7 @@ int16_t* gyro;
 int16_t linx, liny, linz;
 float* cleanGyro;
 unsigned long elapsed = 0;
-MPU* myMPU;
+MPU myMPU;
 
 /*
  * MPL Initializations
@@ -167,14 +167,39 @@ int bufPosition = 0;
   float alt1FILTER[BUFFER_SIZE];
 
 
-void loadnewestRawValues(){
-  if (bufPosition >= BUFFER_SIZE){
-    for(int i = 0; i < BUFFER_SIZE; i++){
-      alt1RAW[i] = 0.0;
-      alt1FILTER[i] = 0.0;
+/*void loadnewestRawValues(){
+
+  if (bufPosition >= BUFFER_SIZE) {
+   for (int i = 0; i < BUFFER_SIZE/2; i++) {
+     //write buffer element of each data type to sd card at write position.
+     writePosition++;
+     Serial.println("single compare");
+     Serial.println(altReadings[i]);
+     Serial.println(filteredAltReadings[i]);
+   }
+    
+   bufPosition = 0;
+  }  
+  
+  else {
+    for (int i = BUFFER_SIZE/2 ; i < BUFFER_SIZE; i++) {
+      //write buffer element of each data type to sd card at write position.
+      writePosition++;
+    
+      Serial.println("single compare");
+      Serial.println(altReadings[i]);
+      Serial.println(filteredAltReadings[i]);
     }
-    bufPosition = 0;
+  }*/
+
+  /*
+  for(int i = 0; i < BUFFER_SIZE; i++){
+    alt1RAW[i] = 0.0;
+    alt1FILTER[i] = 0.0;
   }
+
+  bufPosition = 0;
+  
   //read alts
     alt1RAW[bufPosition] = PSensor->readAltitude();
   //read gyros
@@ -182,8 +207,8 @@ void loadnewestRawValues(){
     myMPU->cleanGyro(cleanGyro, gyro);
     gyroReadingsRAW1[bufPosition][0] = cleanGyro[0];
     gyroReadingsRAW1[bufPosition][1] = cleanGyro[1];
-    gyroReadingsRAW1[bufPosition][2] = cleanGyro[2];
-}
+    gyroReadingsRAW1[bufPosition][2] = cleanGyro[2];*/
+/*}
 void filternewestValues(){
   //read alts
   if(previousFilterAltReadings1 == NULL || previousFilterAltReadings1 == 0.0){
@@ -200,11 +225,20 @@ void filternewestValues(){
     }
     previousFilterAltReadings1 = alt1FILTER[bufPosition];
 
-}
+}*/
 
 
 
-Rocket rocket(RESET, RESET);
+Rocket rocket(STANDBY, STANDBY);
+
+int accel_error_code;
+float curr_accel;
+float prev_accel;
+float curr_altitude; 
+int launch_count = 0;
+int burnout_count = 0;
+unsigned long launch_time;
+unsigned long curr_time;
 
 /*
  * maybe sensor related setup?
@@ -215,14 +249,13 @@ void setup() {
   delay(500);
 
   // Initialize MPU
-  myMPU = new MPU(0, ADDR);
-  myMPU->initGyro(250);
+  Serial.println(myMPU.begin(0, 0x68));
+  myMPU.initGyro(250);
+  myMPU.initAccel(2); // lol idk which number should go here
 
   // Initialize MPL
   PSensor = new MPL(w);
-  PSensor->init();
-  PSensor->setGround();
-
+  
   //Initialize pins for ignition circuits as outputs
   pinMode(DROGUE_IGNITION_CIRCUIT, OUTPUT);
   pinMode(PAYLOAD_IGNITION_CIRCUIT, OUTPUT);
@@ -236,97 +269,103 @@ void setup() {
  * update next state after the switch statement
  */
 void loop(){
-  //make sure ignition pins stay low!
-  digitalWrite(DROGUE_IGNITION_CIRCUIT, LOW);
-  digitalWrite(PAYLOAD_IGNITION_CIRCUIT, LOW);
 
-
- loadnewestRawValues();
- filternewestValues();
-  /*
-   * Print MPL Data
-   */
-  //altitude = PSensor->readAltitude();
-
-  Serial.println("MPL Data: ");
-  Serial.print ("Offset: ");
-  Serial.println(PSensor->getOffset());
-  Serial.print("Current Raw Altitude: ");
-  Serial.println(alt1RAW[bufPosition]);
-  Serial.print("Current Filtered Altitude: ");
-  Serial.println(alt1FILTER[bufPosition]);
-  /*
-   * Print MPU Data
-   */
-  myMPU->readGyro(gyro);
-  myMPU->cleanGyro(cleanGyro, gyro);
-  Serial.println("Gyro Data: ");
-  Serial.println(cleanGyro[0]);
-  Serial.println(cleanGyro[1]);
-  Serial.println(cleanGyro[2]);
-
-  /*
-   *  Print Current and Next State
-   */
+  Serial.println("in loop");
   Serial.print("Current State: ");
   Serial.println(rocket.currentState);
   Serial.print("Next State: ");
   Serial.println(rocket.nextState);
 
+  
+  //make sure ignition pins stay low!
+  digitalWrite(DROGUE_IGNITION_CIRCUIT, LOW);
+  digitalWrite(PAYLOAD_IGNITION_CIRCUIT, LOW);
+
+  curr_time = millis();
+
+  int16_t raw_accel_data[3];
+  accel_error_code = myMPU.readAccel(raw_accel_data); //this is also the wrong number
+  curr_altitude = PSensor->readAltitude();
+
+  Serial.print("Current Altitude: ");
+  Serial.println(curr_altitude);
+  Serial.print("Current Acceleration: ");
+  Serial.println(raw_accel_data[0]);
+  Serial.println("Accel Error Code: " + (String)accel_error_code);
+
+  //loadnewestRawValues();
+  //filternewestValues();
+
+  Serial.println("before switch");
+  
   switch (rocket.currentState){
     case RESET:
       rocket.reset();
       rocket.nextState = STANDBY;
       break;
+      
     case STANDBY:
-      if (rocket.standby())
+      if (rocket.detect_launch(accel_error_code, launch_count)){
         rocket.nextState = POWERED_ASCENT;
+        launch_time = millis();
+      }
       break;
+      
     case POWERED_ASCENT:
-      rocket.powered_ascent();
+      rocket.detect_burnout(curr_accel, prev_accel, burnout_count, launch_time, curr_time);
       rocket.nextState = COASTING;
       break;
+      
     case COASTING:
       rocket.coasting();
       rocket.nextState = TEST_APOGEE;
       break;
+      
     case TEST_APOGEE:
       if (rocket.test_apogee()){
         rocket.nextState = DEPLOY_DROGUE;
-        break;
       }
       else{
         rocket.nextState = TEST_APOGEE;
-        break;
       }
+      break;
+      
     case DEPLOY_DROGUE:
       digitalWrite(DROGUE_IGNITION_CIRCUIT, HIGH); //send logic 1 to ignition circuit
       rocket.deploy_drogue();
       rocket.nextState = DEPLOY_PAYLOAD;
       break;
+      
     case DEPLOY_PAYLOAD:
       digitalWrite(PAYLOAD_IGNITION_CIRCUIT, HIGH); //send logic 1 to ignition circuit
       rocket.deploy_payload();
       rocket.nextState = INITIAL_DESCENT;
       break;
+      
     case INITIAL_DESCENT:
-      rocket.initial_descent();
-      rocket.nextState = DEPLOY_MAIN;
+      if(rocket.detect_main_alt(curr_altitude)){
+        rocket.nextState = DEPLOY_MAIN;
+      }
       break;
+      
     case DEPLOY_MAIN:
       rocket.deploy_main();
       rocket.nextState = FINAL_DESCENT;
       break;
+      
     case FINAL_DESCENT:
       rocket.final_descent();
       rocket.nextState = FINAL_DESCENT; //is there a better idea for here??
       break;
+      
   }
   rocket.currentState = rocket.nextState;
-  bufPosition++;
+  prev_accel = curr_accel;
+  
+  //bufPosition++;
   delay(50);
 }
-
+/*
 float filterData(float* predictionError, float sensorError, float predictConstant, float previousPredict, float reading) {
   //Predict:
   float filteredReading = predictConstant*previousPredict;
@@ -340,4 +379,37 @@ float filterData(float* predictionError, float sensorError, float predictConstan
   //Serial.print("Update Stage: Error:");
   //Serial.println(filteredReading);
   return filteredReading;
-}
+}*/
+
+  /*
+   * Print MPL Data
+   */
+  //altitude = PSensor->readAltitude();
+/*
+  Serial.println("MPL Data: ");
+  Serial.print ("Offset: ");
+  Serial.println(PSensor->getOffset());
+  Serial.print("Current Raw Altitude: ");
+  Serial.println(alt1RAW[bufPosition]);
+  Serial.print("Current Filtered Altitude: ");
+  Serial.println(alt1FILTER[bufPosition]); */
+  /*
+   * Print MPU Data
+   */
+   /*
+  myMPU->readGyro(gyro);
+  myMPU->cleanGyro(cleanGyro, gyro);
+  Serial.println("Gyro Data: ");
+  Serial.println(cleanGyro[0]);
+  Serial.println(cleanGyro[1]);
+  Serial.println(cleanGyro[2]);
+*/
+  /*
+   *  Print Current and Next State
+   */
+   /*
+  Serial.print("Current State: ");
+  Serial.println(rocket.currentState);
+  Serial.print("Next State: ");
+  Serial.println(rocket.nextState);
+  */

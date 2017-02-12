@@ -16,8 +16,8 @@ class Rocket
 	void setRocketStates(int currentState, int nextState);
 	void reset();
 
-	bool detect_launch(int curr_accel, int launch_count);
-	bool detect_burnout(int curr_accel, int prev_accel, int burnout_count, unsigned long launch_time, unsigned long curr_time);
+	bool detect_launch(float curr_accel, int launch_count);
+	bool detect_burnout(float curr_accel, float prev_accel, int burnout_count, unsigned long launch_time, unsigned long curr_time);
 
 	bool coasting();
 	bool test_apogee();

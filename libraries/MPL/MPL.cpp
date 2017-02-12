@@ -49,6 +49,8 @@ boolean MPL::init() {
   delay(1000);
 
   setGround();
+  
+  debug("in init after setGround()");
 
   num_samples_avg = NUM_SAMPLES_AVG;
 

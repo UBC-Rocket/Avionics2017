@@ -336,7 +336,7 @@ int MPU::readGyro(int16_t *data) {
   return 0;
 }
 
-int MPU::readAccel(int16_t *data) {
+int MPU::readAccel(int16_t[] data) {
   uint8_t rawData[6];
   int err;
   if(err = read(ACCEL_BASE, 6, rawData)) return err;
