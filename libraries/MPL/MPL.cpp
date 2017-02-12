@@ -1,6 +1,8 @@
 #include "MPL.h"
 #include <i2c_t3.h>
 
+
+//Do we still need these?
 //#define PWR_MNG 0x6B //register address of pwr management
 //#define USR_CNTRL 0x6A //register address of user control
 
@@ -58,7 +60,9 @@ boolean MPL::init() {
   return true;
 
 }
-
+/*
+Set the ground level to be subtracted off the real altitude measurement
+*/
 void MPL::setGround() {
   debug("in setGround");
   ground_level = 0.0;
@@ -76,11 +80,22 @@ void MPL::setGround() {
   ground_set = true;
 }
 
+
+/*
+
+Gets the gound level offset that is being subtracted off the real altitude
+
+*/
 float MPL::getOffset() {
   return ground_level;
 }
 
-//  Reads the current altitude in meters
+
+
+/*
+Reads the current altitude in meters and return that value minus the gound level offset if it has been set.
+
+*/
 float MPL::readAltitude() {
   //The following will force a read:
   writeByte(0x26, REG_INIT+2); //This forces the chip to make a reading
@@ -118,7 +133,9 @@ float MPL::readAltitude() {
   }
 
 }
-
+/*
+returns the temperature in degrees Celsius 
+*/
 float MPL::readTemp()
 {
   int8_t u_temp;
@@ -137,8 +154,8 @@ byte MPL::writeByte(byte _regAddr, byte _value)
 {
   if(!wire) {
     Wire.beginTransmission(ADDRESS);
-    Wire.write(_regAddr);
-    Wire.write(_value);
+    Wire.write(_regAddr);//load target reg
+    Wire.write(_value); //load value into target reg
     return Wire.endTransmission(true);
   }
   else {
@@ -148,7 +165,7 @@ byte MPL::writeByte(byte _regAddr, byte _value)
     return Wire1.endTransmission(true);
   }
 }
-
+//  read "length" bytes starting at a given address and loads the values into the given array pointer  
 int MPL::readBytes(byte _regAddr, uint8_t _length, uint8_t *_data){
   if(!_data) return -1;
 
@@ -179,12 +196,15 @@ int MPL::readBytes(byte _regAddr, uint8_t _length, uint8_t *_data){
     }
   }
 
+//read ONE byte from the given reg and returns the unsigned value
   uint8_t MPL::readByte(uint8_t reg) {
     uint8_t data;
     readBytes(reg, 1, &data);
     return data;
   }
-
+  /*
+  serail prints a given string message 
+  */
 void MPL::debug(String msg){
   Serial.println(msg);
 }
