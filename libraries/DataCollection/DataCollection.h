@@ -204,7 +204,7 @@ public:
 	int update();
 	int writeToSD();
 	int getBufferSize();
-	
+	void filterALT1();
 
 
 

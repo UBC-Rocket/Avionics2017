@@ -23,6 +23,14 @@
 
 
 int DataCollection::update() {
+
+	//stage 1, get raw data put it in the Buffers
+	
+	//stage 2, do math to get the right values into the BEST GUESS feilds 
+
+
+
+	//TEMP TO TEST NOT REALLY THE OPERATIONS
 	previousALTITUDE = currentALTITUDE;
 	currentALTITUDE = PSensor1->readAltitude();
 
@@ -45,4 +53,11 @@ int DataCollection::writeToSD() {
 }
 int DataCollection::getBufferSize() {
 	return 0;
+}
+
+void DataCollection::filterALT1() {
+
+
+
+
 }
