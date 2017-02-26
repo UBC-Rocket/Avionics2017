@@ -43,7 +43,11 @@ int burnout_count = 0;
 unsigned long launch_time;
 unsigned long curr_time;
 
+
+//temp for printing and TESTING
 float curr_altitude;
+int16_t curr_Acc[3];
+
 
 void setup() {
 
@@ -66,47 +70,36 @@ void setup() {
  * update next state after the switch statement
  */
 void loop(){
+  //Update The Data, Get next Best Guess at ALT ACC and VELO------------------
+  dataCollector->update();
+  
 
 
-dataCollector->update();
-  Serial.print("Current State: ");
-  Serial.println(rocket.currentState);
-  Serial.print("Next State: ");
-  Serial.println(rocket.nextState);
+
 
   //make sure ignition pins stay low!
   digitalWrite(DROGUE_IGNITION_CIRCUIT, LOW);
   digitalWrite(PAYLOAD_IGNITION_CIRCUIT, LOW);
 
+  //PRINT THE DATA THIS IS FOR TESTING ONLY!
   curr_time = millis();
-
-
-    
-  curr_altitude = dataCollector->currentALTITUDE;
-
-  Serial.println("Current Altitude: " + (String)curr_altitude);
-  
   Serial.println("Current time: " + (String)curr_time);
 
-//  //keeping track of MPU's error codes, would ideally be 0
-//  accel_error_code = myMPU.readAccel(raw_accel_data); //this is also the wrong number
-//  //Serial.println("init mag " + (String)myMPU.initMag());
-//  mag_error_code = myMPU.readMag(raw_mag_data);
-
-
-
+        curr_altitude = dataCollector->currentALTITUDE;
+  Serial.println("Current Altitude: " + (String)curr_altitude);
 
   
-//  Serial.println("Current Acceleration: " + (String)raw_accel_data[0]);
-//  Serial.println("Accel Error Code: " + (String)accel_error_code);            //ideally 0
-//  
-//  Serial.println("Current Mag shit: " + (String)raw_mag_data[0]);
-//  Serial.println("Mag Error Code: " + (String)mag_error_code);                //ideally 0
+    curr_Acc[0] = dataCollector->currentAcceleration[0];
+     curr_Acc[1] = dataCollector->currentAcceleration[1];
+      curr_Acc[2] = dataCollector->currentAcceleration[2];
+  Serial.println("Current Acceleration X: " + (String)curr_Acc[0] + " Y: "+(String)curr_Acc[1] + " Z: " +(String)curr_Acc[2]);
+ 
   
 
-  //loadnewestRawValues();
-  //filternewestValues();
-  
+
+
+
+  //MAKE A STATE CHANGE----------------------------------------
   switch (rocket.currentState){
     case RESET:
       rocket.reset();
@@ -168,57 +161,31 @@ dataCollector->update();
       break;
       
   }
-  rocket.currentState = rocket.nextState;
-  //prev_accel = curr_accel;
-  
-  //bufPosition++;
-  delay(50);
-}
-/*
-float filterData(float* predictionError, float sensorError, float predictConstant, float previousPredict, float reading) {
-  //Predict:
-  float filteredReading = predictConstant*previousPredict;
-  *predictionError = predictConstant * (*predictionError) * predictConstant;
-  //Serial.print("Predict Stage: Filtered:");
-  //Serial.println(filteredReading);
-  //Update:
-  float Gain = (*predictionError)/(*predictionError + sensorError);
-  filteredReading = filteredReading + Gain * (reading - filteredReading);
-  *predictionError = (1-Gain) * (*predictionError);
-  //Serial.print("Update Stage: Error:");
-  //Serial.println(filteredReading);
-  return filteredReading;
-}*/
 
-  /*
-   * Print MPL Data
-   */
-  //altitude = PSensor->readAltitude();
-/*
-  Serial.println("MPL Data: ");
-  Serial.print ("Offset: ");
-  Serial.println(PSensor->getOffset());
-  Serial.print("Current Raw Altitude: ");
-  Serial.println(alt1RAW[bufPosition]);
-  Serial.print("Current Filtered Altitude: ");
-  Serial.println(alt1FILTER[bufPosition]); */
-  /*
-   * Print MPU Data
-   */
-   /*
-  myMPU->readGyro(gyro);
-  myMPU->cleanGyro(cleanGyro, gyro);
-  Serial.println("Gyro Data: ");
-  Serial.println(cleanGyro[0]);
-  Serial.println(cleanGyro[1]);
-  Serial.println(cleanGyro[2]);
-*/
-  /*
-   *  Print Current and Next State
-   */
-   /*
-  Serial.print("Current State: ");
+  
+  //Get Ready for next loop
+  rocket.currentState = rocket.nextState;
+  delay(50);
+
+
+
+
+
+
+ 
+  Serial.print("\nCurrent State: ");
   Serial.println(rocket.currentState);
   Serial.print("Next State: ");
   Serial.println(rocket.nextState);
-  */
+
+
+
+
+
+
+
+
+
+
+  
+}

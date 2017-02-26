@@ -25,6 +25,18 @@
 int DataCollection::update() {
 	previousALTITUDE = currentALTITUDE;
 	currentALTITUDE = PSensor1->readAltitude();
+
+
+	//these will have to be a convertion to float later
+	previousAcceleration[0] = currentAcceleration[0];
+	previousAcceleration[1] = currentAcceleration[1];
+	previousAcceleration[2] = currentAcceleration[2];
+	
+	mpu1.readAccel(currentAcceleration);
+
+
+
+
 	return 0;
 }
 int DataCollection::writeToSD() {

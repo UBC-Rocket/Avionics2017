@@ -189,15 +189,11 @@ public:
 	float previousAltVelocity;
 	float currentAltVelocity;
 
-	//filtered acceleration data i.e. best guess
-	float currentAccelerationX;
-	float currentAccelerationY;
-	float currentAccelerationZ;
+	//filtered acceleration data i.e. best guess THESE WILL HAVE TO BE FLOATS AS CORRECT TO Gs
+	int16_t  currentAcceleration[3];
 
-	//filtered data from the system
-	float previousAccelerationX;
-	float previousAccelerationY;
-	float previousAccelerationZ;
+	//filtered data from the syste	
+	int16_t  previousAcceleration[3];
 
 
 
