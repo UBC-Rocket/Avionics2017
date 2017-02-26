@@ -7,6 +7,7 @@
 #include "MPL.h"
 #include <i2c_t3.h>
 #include <TimerOne.h>
+#include <DataCollection.h>
 
 /*
  * State Definitions
@@ -23,217 +24,16 @@
 #define FINAL_DESCENT   9
 
 /*
- * MPU Definitions
- */
-#define ADDR 0x68       //i2c address of sensor
-#define PWR_MNG 0x6B    //register address of pwr management
-#define USR_CNTRL 0x6A  //register address of user control
-#define GYRO_SETUP 0x1B //register address of gryoscope setup
-#define ACCEL_SETUP 0x1C
-
-#define GYRO_BASE 0x43
-#define ACCEL_BASE 0x3B
-
-#define OFFSET_X_HIGH 0x0
-#define OFFSET_X_LOW 0x1
-
-#define OFFSET_Y_HIGH 0x2
-#define OFFSET_Y_LOW 0x3
-
-#define OFFSET_Z_HIGH 0x4
-#define OFFSET_Z_LOW 0x5
-
-/*
  * Ignition Circuit Definitions
  */
 const int DROGUE_IGNITION_CIRCUIT = 7;  //pin to drogue chute ignition circuit
 const int PAYLOAD_IGNITION_CIRCUIT = 8; //pin to nose cone ignition circuit
 
-/*
- * MPU Initialization
- */
-int16_t* gyro;
-int16_t linx, liny, linz;
-float* cleanGyro;
-unsigned long elapsed = 0;
-MPU myMPU;
 
-/*
- * MPL Initializations
- */
-int16_t x, y, z;
-int16_t x_off, y_off, z_off;
-float x_pos, y_pos, z_pos;
-bool w = false;
-MPL* PSensor;
-/*
- * Kalman Filter Initializations
- */
- float Predict_Constant = 1.10;
- float Predict_Error;
- float Previous_Predict;
- float Altimeter_Error = 50;
- float Gain = 0.0;
-/*
- * State Machine Initialization
- */
-
-//size of each buffer
-
-
-//the posistion in the buffers
-int bufPosition = 0;
-/*
- * The Buffer for each seonsor type
- */
-//-----------------------
-//MPU
-//find these by trial and error
-    float MPUSensorError = 0.75;
-    float MPUSensorPredConst = 1.2;
-
-//Buffers
-//MPU1
- #define BUFFER_SIZE 100
-
-  float previousFilterGyroReadings1[3];
-  float previousFilterAccelReadings1[3];
-  float previousFilterMagReadings1[3];
-  
-  float previousErrorGyroReadings1[3] = {1, 1, 1};
-  float previousErrorAccelReadings1[3] = {1, 1, 1};
-  float previousErrorMagReadings1[3] = {1, 1, 1};
-
-  int16_t gyroReadingsRAW1[BUFFER_SIZE][3];
-  int16_t accelReadingsRAW1[BUFFER_SIZE][3];
-  int16_t magReadingsRAW1[BUFFER_SIZE][3];
-
-  int16_t gyroReadingsFILTER1[BUFFER_SIZE][3];
-  int16_t accelReadingsFILTER1[BUFFER_SIZE][3];
-  int16_t magReadingsFILTER1[BUFFER_SIZE][3];
-
-//MPU2
-
-  float previousFilterGyroReadings2[3];
-  float previousFilterAccelReadings2[3];
-  float previousFilterMagReadings2[3];
-  
-  float previousErrorGyroReadings2[3] = {1, 1, 1};
-  float previousErrorAccelReadings2[3] = {1, 1, 1};
-  float previousErrorMagReadings2[3] = {1, 1, 1};
-
-  int16_t gyroReadingsRAW2[BUFFER_SIZE][3];
-  int16_t accelReadingsRAW2[BUFFER_SIZE][3];
-  int16_t magReadingsRAW2[BUFFER_SIZE][3];
-
-  int16_t gyroReadingsFILTER2[BUFFER_SIZE][3];
-  int16_t accelReadingsFILTER2[BUFFER_SIZE][3];
-  int16_t magReadingsFILTER2[BUFFER_SIZE][3];
-
-
-//MPU3
-
-  float previousFilterGyroReadings3[3];
-  float previousFilterAccelReadings3[3];
-  float previousFilterMagReadings3[3];
-  
-
-  float previousErrorGyroReadings3[3] = {1, 1, 1};
-  float previousErrorAccelReadings3[3] = {1, 1, 1};
-  float previousErrorMagReadings3[3] = {1, 1, 1};
-
-  int16_t gyroReadingsFILTER3[BUFFER_SIZE][3];
-  int16_t accelReadingsFILTER3[BUFFER_SIZE][3];
-  int16_t magReadingsFILTER3[BUFFER_SIZE][3];
-
-  int16_t gyroReadingsRAW3[BUFFER_SIZE][3];
-  int16_t accelReadingsRAW3[BUFFER_SIZE][3];
-  int16_t magReadingsRAW3[BUFFER_SIZE][3];
-
-
-//-----------------------
-//ALT
-//find these by trial and error
-    float MPLSensorError = 4;
-    float MPLSensorPredConst = 1.000;
-
-//Buffers
-//ATL1
-  float previousErrorAltReadings1 = 1;
-  float previousFilterAltReadings1;
-  float alt1RAW[BUFFER_SIZE];
-  float alt1FILTER[BUFFER_SIZE];
-
-/*void loadnewestRawValues(){
-
-  if (bufPosition >= BUFFER_SIZE) {
-   for (int i = 0; i < BUFFER_SIZE/2; i++) {
-     //write buffer element of each data type to sd card at write position.
-     writePosition++;
-     Serial.println("single compare");
-     Serial.println(altReadings[i]);
-     Serial.println(filteredAltReadings[i]);
-   }
-    
-   bufPosition = 0;
-  }  
-  
-  else {
-    for (int i = BUFFER_SIZE/2 ; i < BUFFER_SIZE; i++) {
-      //write buffer element of each data type to sd card at write position.
-      writePosition++;
-    
-      Serial.println("single compare");
-      Serial.println(altReadings[i]);
-      Serial.println(filteredAltReadings[i]);
-    }
-  }*/
-
-  /*
-  for(int i = 0; i < BUFFER_SIZE; i++){
-    alt1RAW[i] = 0.0;
-    alt1FILTER[i] = 0.0;
-  }
-
-  bufPosition = 0;
-  
-  //read alts
-    alt1RAW[bufPosition] = PSensor->readAltitude();
-  //read gyros
-    myMPU->readGyro(gyro);
-    myMPU->cleanGyro(cleanGyro, gyro);
-    gyroReadingsRAW1[bufPosition][0] = cleanGyro[0];
-    gyroReadingsRAW1[bufPosition][1] = cleanGyro[1];
-    gyroReadingsRAW1[bufPosition][2] = cleanGyro[2];*/
-/*}
-void filternewestValues(){
-  //read alts
-  if(previousFilterAltReadings1 == NULL || previousFilterAltReadings1 == 0.0){
-    previousFilterAltReadings1 = alt1RAW[bufPosition];
-  }
-    alt1FILTER[bufPosition] = filterData(&previousErrorAltReadings1, MPLSensorError, MPLSensorPredConst, previousFilterAltReadings1, alt1RAW[bufPosition]);
-    previousFilterAltReadings1 = alt1FILTER[bufPosition];
-  //read gyross
-  if(previousFilterGyroReadings1[0] == NULL || previousFilterGyroReadings1[0] == 0.0){
-    previousFilterAltReadings1 = alt1RAW[bufPosition];
-  }
-    for(int i = 0; i < 3; i++){
-      gyroReadingsFILTER1[bufPosition][i] = filterData(&previousErrorGyroReadings1[i], MPUSensorError, MPUSensorPredConst, previousFilterGyroReadings1[i], gyroReadingsRAW1[bufPosition][i]);
-    }
-    previousFilterAltReadings1 = alt1FILTER[bufPosition];
-
-}*/
 
 Rocket rocket(STANDBY, STANDBY);
+DataCollection* dataCollector;
 
-//MPU's error codes
-int accel_error_code;
-int mag_error_code;
-
-//prev and current data
-float curr_accel;
-float prev_accel;
-float curr_altitude; 
 
 //count variables for decisions
 int launch_count = 0;
@@ -243,31 +43,21 @@ int burnout_count = 0;
 unsigned long launch_time;
 unsigned long curr_time;
 
-//structures to hold unfiltered data
-int16_t raw_accel_data[3];
-int16_t raw_mag_data[3];
-
-/*
- * maybe sensor related setup?
- */
+float curr_altitude;
 
 void setup() {
+
   Serial.begin(9600);
   delay(500);
 
-  // Initialize MPU
-  Serial.println(myMPU.begin(1, 0x68));
-  myMPU.initGyro(250);
-  myMPU.initAccel(2); // lol idk which number should go here
-  myMPU.initMag();
 
-  // Initialize MPL
-  PSensor = new MPL(w);
-  
+
   //Initialize pins for ignition circuits as outputs
   pinMode(DROGUE_IGNITION_CIRCUIT, OUTPUT);
   pinMode(PAYLOAD_IGNITION_CIRCUIT, OUTPUT);
 
+  
+  dataCollector = new DataCollection();
 }
 
 /*
@@ -277,6 +67,8 @@ void setup() {
  */
 void loop(){
 
+
+dataCollector->update();
   Serial.print("Current State: ");
   Serial.println(rocket.currentState);
   Serial.print("Next State: ");
@@ -288,19 +80,28 @@ void loop(){
 
   curr_time = millis();
 
-  //keeping track of MPU's error codes, would ideally be 0
-  accel_error_code = myMPU.readAccel(raw_accel_data); //this is also the wrong number
-  //Serial.println("init mag " + (String)myMPU.initMag());
-  mag_error_code = myMPU.readMag(raw_mag_data);
-  
-  curr_altitude = PSensor->readAltitude();
+
+    
+  curr_altitude = dataCollector->currentALTITUDE;
 
   Serial.println("Current Altitude: " + (String)curr_altitude);
-  Serial.println("Current Acceleration: " + (String)raw_accel_data[0]);
-  Serial.println("Accel Error Code: " + (String)accel_error_code);            //ideally 0
   
-  Serial.println("Current Mag shit: " + (String)raw_mag_data[0]);
-  Serial.println("Mag Error Code: " + (String)mag_error_code);                //ideally 0
+  Serial.println("Current time: " + (String)curr_time);
+
+//  //keeping track of MPU's error codes, would ideally be 0
+//  accel_error_code = myMPU.readAccel(raw_accel_data); //this is also the wrong number
+//  //Serial.println("init mag " + (String)myMPU.initMag());
+//  mag_error_code = myMPU.readMag(raw_mag_data);
+
+
+
+
+  
+//  Serial.println("Current Acceleration: " + (String)raw_accel_data[0]);
+//  Serial.println("Accel Error Code: " + (String)accel_error_code);            //ideally 0
+//  
+//  Serial.println("Current Mag shit: " + (String)raw_mag_data[0]);
+//  Serial.println("Mag Error Code: " + (String)mag_error_code);                //ideally 0
   
 
   //loadnewestRawValues();
@@ -313,14 +114,14 @@ void loop(){
       break;
       
     case STANDBY:
-      if (rocket.detect_launch(accel_error_code, launch_count)){
+      if (rocket.detect_launch(0, launch_count)){
         rocket.nextState = POWERED_ASCENT;
         launch_time = millis();
       }
       break;
       
     case POWERED_ASCENT:
-      rocket.detect_burnout(curr_accel, prev_accel, burnout_count, launch_time, curr_time);
+      rocket.detect_burnout(0, 0, burnout_count, launch_time, curr_time);
       rocket.nextState = COASTING;
       break;
       
@@ -368,7 +169,7 @@ void loop(){
       
   }
   rocket.currentState = rocket.nextState;
-  prev_accel = curr_accel;
+  //prev_accel = curr_accel;
   
   //bufPosition++;
   delay(50);

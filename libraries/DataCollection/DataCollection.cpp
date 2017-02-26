@@ -2,56 +2,35 @@
 #include <DataCollection.h>
 
 
-void DataCollection::writeBuffer() {
 
-  if (bufPosition >= BUFFER_SIZE) {
-    for (int i = 0; i < BUFFER_SIZE/2; i++) {
-      //write buffer element of each data type to sd card at write position.
-      writePosition++;
-	  Serial.println("single compare");
-      Serial.println(Readings[i]);
-	  Serial.println(filteredReadings[i]);
+ DataCollection::DataCollection() {
+	Serial.begin(9600);
+	delay(500);
 
-    }
-    bufPosition = 0;
-  }else{
-    for (int i = BUFFER_SIZE/2 ; i < BUFFER_SIZE; i++) {
-      //write buffer element of each data type to sd card at write position.
-      writePosition++;
+	// Initialize MPU
+	Serial.println(mpu1.begin(1, 0x68));
+	mpu1.initGyro(250);
+	mpu1.initAccel(2); // lol idk which number should go here
+	mpu1.initMag();
 
-	  Serial.println("single compare");
-      Serial.println(Readings[i]);
-	  Serial.println(filteredReadings[i]);
-    }
-  }
+	// Initialize MPL
+	PSensor1 = new MPL(0);
+
+	//Initialize pins for ignition circuits as outputs
+	
+	update();
 }
 
-void DataCollection::readData(float* predError, float sensor, float predict, float previous, float read) {
-	sensorError = sensor;
-  predictConstant = predict;
-  previousPredict = previous;
-  reading = read;
-  if (previousPredict == NULL);
-    previousPredict = reading;
-  predictionError = predError;
-	//gyroReadings[bufPosition] = MPU.readGyro();
-	//accelReadings[bufPosition] = MPU.readAccel();
-	//magReadings[bufPosition] = MPU.readMag();
-	/*Readings[bufPosition] = alt->readAltitude();
 
-	if (bufPosition >= BUFFER_SIZE || bufPosition == BUFFER_SIZE/2)
-		writeBuffer();
-		*/
+int DataCollection::update() {
+	previousALTITUDE = currentALTITUDE;
+	currentALTITUDE = PSensor1->readAltitude();
+	return 0;
 }
+int DataCollection::writeToSD() {
+	return 0;
 
-float DataCollection::filterData() {
-	//Predict:
-	filteredReading = predictConstant*previousPredict;
-  predictionError = predictConstant*predictionError*predictConstant
-
-  //Update:
-  Gain = predictionError/(predictionError + sensorError);
-  filteredReading = filteredReading + Gain *(reading- filteredReading)
-  predictionError =(1-Gain) *predictionError;
-  return filteredReading;
+}
+int DataCollection::getBufferSize() {
+	return 0;
 }
