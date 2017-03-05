@@ -3,6 +3,7 @@
 
 #define PWR_MNG 0x6B //register address of pwr management
 #define USR_CNTRL 0x6A //register address of user control
+#define CONFIG 0x20 //register address of configuration
 #define WHOAMI 0x75 //test adress should always read 0x73
 
 #define GYRO_SETUP 0x1B //register address of gryoscope setup
@@ -30,6 +31,7 @@
 #define FIFO_RW 0x74 //register to read fifo data from. Read sequentially from the same address.
 
 //hard values from invensense for DMP registers
+#define SMPL_DIV 0x19 //register address of sample rate divider
 #define DMP_START_ADDR 0x70
 #define DMP_CODE_SIZE           (3062)
 #define CFG_9_QUAT              (2712)
@@ -267,6 +269,8 @@ int MPU::begin(bool whichWire, uint8_t Addr) {
   delay(500);
   debug("Initializing Control Register");
   if(err = write(USR_CNTRL, 0)) debug(err);
+  debug("Initializing Configuration Register");
+  if(err = write(CONFIG, 0b1)) debug(err); //set DLPF_CFG bits to 1 for 1khz internal sampling.
   debug("Library Initialized");
   debug("WHOAMI (should be 0x73 = 115): ");
   debug(selfTest());
@@ -304,7 +308,7 @@ int MPU::initAccel(uint8_t fullScale) {
     case 4: regValue = 0b01; break;
     case 8: regValue = 0b10; break;
     case 16: regValue = 0b11; break;
-    default: return false; break;
+    default: return -1; break;
   }
 
   accelFS = (float)fullScale;
@@ -432,6 +436,7 @@ int MPU::enableDMP(bool enable) {
   if(err = writeMem(CFG_9_QUAT, 4, data)) return err;
 
   if(err = write(USR_CNTRL, uctrl)) return err;
+  if(err = write(SMPL_DIV, 4)) return err;
 
   //set dmp fifo rate_div
   short sampleDiv = 200 / 25 - 1;
