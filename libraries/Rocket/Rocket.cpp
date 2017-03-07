@@ -8,9 +8,10 @@
 #include "MPU.h"
 #include "MPL.h"
 
-#define SIM_LAUNCH_ACCEL 	40 //assuming sims are accurate, > 40
+#define SIM_LAUNCH_ACCEL 	40 		//assuming sims are accurate, > 40
 #define SIM_BURNOUT_ACCEL	4
 #define NUM_CHECKS 			4
+#define MAIN_ALT			15000 	//height at which to deploy the main
 
 // Rocket State Contructor
 Rocket::Rocket(int initialCurrentState, int initialNextState)
@@ -120,7 +121,9 @@ bool Rocket::deploy_payload(){
  */
 bool Rocket::detect_main_alt(float curr_altitude){
 	
-	if (curr_altitude == 1500){
+	//want it less than main alt in case something goes horribly wrong 
+	//and we should deploy it when we're close to the ground 
+	if (curr_altitude < MAIN_ALT){ 
 		return true;
 	}
 	
