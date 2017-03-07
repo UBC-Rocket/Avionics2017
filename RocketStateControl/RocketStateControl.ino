@@ -142,6 +142,7 @@ void loop(){
 
     case LANDED:
       rocket.flight_complete();
+      break;
       
   }
 
