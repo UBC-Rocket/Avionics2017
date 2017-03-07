@@ -13,7 +13,7 @@ class MPU {
 public:
   int begin(bool whichWire, uint8_t Addr);
   int selfTest();
-  
+
   int initGyro(uint16_t fullScale);
   int initAccel(uint8_t fullScale);
   int initMag();
@@ -21,8 +21,6 @@ public:
   int readGyro(int16_t *data);
   int readAccel(int16_t *data);
   int readMag(int16_t *data);
-
-  void cleanGyro(float *cleanData, int16_t *data);
 
   int readDMP(long quat[]);
   int loadDMP();
@@ -39,4 +37,3 @@ private:
   int read(uint8_t reg, uint8_t length, uint8_t *data);
 };
 #endif
-
