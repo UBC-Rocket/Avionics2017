@@ -17,14 +17,8 @@ class MPL {
 public:
   int begin(bool whichWire);
 
-  // Sensor configuration functions
-  void resetChip();
-
   // Initialization functions
   void setGround();
-
-  // Check for data functions
-  bool getDataReady();
 
   // Read data functions
   float readAGL();
