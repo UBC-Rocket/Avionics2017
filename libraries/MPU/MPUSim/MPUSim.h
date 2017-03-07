@@ -3,17 +3,20 @@
 
 #include <Arduino.h>
 #include <inttypes.h>
-#include "testData.h"
 
 typedef short int16_t;
 
 class MPU {
+  #include "testData.h"
+  
   unsigned long start;
   int lastTimeIndex;
   float gyroFS;
   float accelFS;
 public:
-  begin(bool whichWire, uint8_t Addr);
+  int begin(bool whichWire, uint8_t Addr);
+  int selfTest();
+  
   int initGyro(uint16_t fullScale);
   int initAccel(uint8_t fullScale);
   int initMag();

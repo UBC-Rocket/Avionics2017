@@ -1,4 +1,4 @@
-#include "MPU.h"
+#include "MPUSim.h"
 #include <i2c_t3.h>
 
 #define WHOAMI 0x1A
@@ -6,6 +6,7 @@
 int MPU::begin(bool whichWire, uint8_t Addr) {
   start = micros();
   lastTimeIndex = 0;
+  return 0;
 }
 
 int MPU::selfTest() {
@@ -61,7 +62,7 @@ int MPU::readGyro(int16_t *data) {
 
 int MPU::readAccel(int16_t *data) {
   int accel = accels[getTimeIndex()];
-  accel = accel * 16.0 / accelFS
+  //accel = accel * 16.0 / accelFS;
 
   data[0] = 0;
   data[1] = 0;
@@ -70,7 +71,7 @@ int MPU::readAccel(int16_t *data) {
 }
 
 int MPU::readMag(int16_t* data) {
-  int mag = mag[getTimeIndex()];
+  int mag = mags[getTimeIndex()];
 
   data[0] = 0;
   data[1] = 0;

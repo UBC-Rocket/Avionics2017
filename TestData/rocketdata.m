@@ -7,27 +7,24 @@ alts = data(:, 5);
 
 outFile = fopen('testData.h', 'w');
 
-fprintf(outFile, '#ifndef TESTDATA_H\n#define TESTDATA_H\n\n');
-
-fprintf(outFile, 'unsigned long times[] = {');
+fprintf(outFile, 'unsigned long times[%d] = {', size(times, 1));
 fprintf(outFile, '%u, ', times);
 fprintf(outFile, '};\n');
 
-fprintf(outFile, 'int gyros[] = {');
+fprintf(outFile, 'int gyros[%d] = {', size(gyros, 1));
 fprintf(outFile, '%d, ', gyros);
 fprintf(outFile, '};\n');
 
-fprintf(outFile, 'int accels[] = {');
+fprintf(outFile, 'int accels[%d] = {', size(accels, 1));
 fprintf(outFile, '%d, ', accels);
 fprintf(outFile, '};\n');
 
-fprintf(outFile, 'int mags[] = {');
+fprintf(outFile, 'int mags[%d] = {', size(mags, 1));
 fprintf(outFile, '%d, ', mags);
 fprintf(outFile, '};\n');
 
-fprintf(outFile, 'int alts[] = {');
+fprintf(outFile, 'float alts[%d] = {', size(alts, 1));
 fprintf(outFile, '%f, ', alts);
 fprintf(outFile, '};\n');
 
-fprintf(outFile, '#endinf');
 fclose(outFile);
