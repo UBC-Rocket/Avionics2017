@@ -304,7 +304,7 @@ int MPU::initAccel(uint8_t fullScale) {
     case 4: regValue = 0b01; break;
     case 8: regValue = 0b10; break;
     case 16: regValue = 0b11; break;
-    default: return false; break;
+    default: return -1; break;
   }
 
   accelFS = (float)fullScale;
