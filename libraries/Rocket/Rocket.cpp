@@ -20,15 +20,6 @@ Rocket::Rocket(int initialCurrentState, int initialNextState)
 	//setRocketStates(currentState, nextState);
 }
 
-/*
- * Reset function will be called once at the beginning of each use
- * Calibrate all the sensors
- * (I low key think we should get rid of this)
- */
-void Rocket::reset() {
-	//do stuff here 
-}
-
 bool Rocket::detect_launch(float curr_accel, int launch_count) {
 	//giant spike in acceleration 
 	//return true when we've seen 4 positive accelerations in a row 
@@ -62,7 +53,8 @@ bool Rocket::detect_burnout(float curr_accel, float prev_accel, int burnout_coun
  */
 bool Rocket::coasting(){
 	//TODO: figure out what kind of data threshold we should be looking for
-	//looking at acceleration data 
+	//Returns true if one of the following is true: timeout, decrease in delta 
+	//accel, or the barometric data stabalizes a lot
 	
 	bool apogee = false;
 	
@@ -78,6 +70,9 @@ bool Rocket::coasting(){
  * if no, return FALSE  
  */
 bool Rocket::test_apogee(){
+	//Passes if one of the following is true: 
+	//delta pressure is positive or delta accel is BIG
+	//check this a few times
 	bool apogee = false;
 	
 	//if we confirm we're at apogee, apogee = true
@@ -154,7 +149,12 @@ bool Rocket::deploy_main(){
 /*
  * Final_Descent 
  */
-void Rocket::final_descent(){
-	//only save data to SD?
+bool Rocket::final_descent(){
+	//read accel data to see if we've stopped moving
+	//return true when we've landed
+	return false;
 }
 
+void Rocket::flight_complete(){
+	//stop recording data to the SD card 
+}

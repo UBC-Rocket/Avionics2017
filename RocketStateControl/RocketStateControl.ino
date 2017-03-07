@@ -12,16 +12,16 @@
 /*
  * State Definitions
  */
-#define RESET           0
-#define STANDBY         1
-#define POWERED_ASCENT  2
-#define COASTING        3
-#define TEST_APOGEE     4
-#define DEPLOY_DROGUE   5
-#define DEPLOY_PAYLOAD  6
-#define INITIAL_DESCENT 7
-#define DEPLOY_MAIN     8
-#define FINAL_DESCENT   9
+#define STANDBY         0
+#define POWERED_ASCENT  1
+#define COASTING        2
+#define TEST_APOGEE     3
+#define DEPLOY_DROGUE   4
+#define DEPLOY_PAYLOAD  5
+#define INITIAL_DESCENT 6
+#define DEPLOY_MAIN     7
+#define FINAL_DESCENT   8
+#define LANDED          9
 
 /*
  * Ignition Circuit Definitions
@@ -29,11 +29,8 @@
 const int DROGUE_IGNITION_CIRCUIT = 7;  //pin to drogue chute ignition circuit
 const int PAYLOAD_IGNITION_CIRCUIT = 8; //pin to nose cone ignition circuit
 
-
-
 Rocket rocket(STANDBY, STANDBY);
 DataCollection* dataCollector;
-
 
 //count variables for decisions
 int launch_count = 0;
@@ -43,23 +40,18 @@ int burnout_count = 0;
 unsigned long launch_time;
 unsigned long curr_time;
 
-
 //temp for printing and TESTING
 float curr_altitude;
 int16_t curr_Acc[3];
-
 
 void setup() {
 
   Serial.begin(9600);
   delay(500);
 
-
-
   //Initialize pins for ignition circuits as outputs
   pinMode(DROGUE_IGNITION_CIRCUIT, OUTPUT);
   pinMode(PAYLOAD_IGNITION_CIRCUIT, OUTPUT);
-
   
   dataCollector = new DataCollection();
 }
@@ -73,10 +65,6 @@ void loop(){
   //Update The Data, Get next Best Guess at ALT ACC and VELO------------------
   dataCollector->update();
   
-
-
-
-
   //make sure ignition pins stay low!
   digitalWrite(DROGUE_IGNITION_CIRCUIT, LOW);
   digitalWrite(PAYLOAD_IGNITION_CIRCUIT, LOW);
@@ -85,26 +73,16 @@ void loop(){
   curr_time = millis();
   Serial.println("Current time: " + (String)curr_time);
 
-        curr_altitude = dataCollector->currentALTITUDE;
+  curr_altitude = dataCollector->currentALTITUDE;
   Serial.println("Current Altitude: " + (String)curr_altitude);
 
-  
-    curr_Acc[0] = dataCollector->currentAcceleration[0];
-     curr_Acc[1] = dataCollector->currentAcceleration[1];
-      curr_Acc[2] = dataCollector->currentAcceleration[2];
+  curr_Acc[0] = dataCollector->currentAcceleration[0];
+  curr_Acc[1] = dataCollector->currentAcceleration[1];
+  curr_Acc[2] = dataCollector->currentAcceleration[2];
   Serial.println("Current Acceleration X: " + (String)curr_Acc[0] + " Y: "+(String)curr_Acc[1] + " Z: " +(String)curr_Acc[2]);
- 
-  
-
-
-
 
   //MAKE A STATE CHANGE----------------------------------------
   switch (rocket.currentState){
-    case RESET:
-      rocket.reset();
-      rocket.nextState = STANDBY;
-      break;
       
     case STANDBY:
       if (rocket.detect_launch(0, launch_count)){
@@ -156,36 +134,24 @@ void loop(){
       break;
       
     case FINAL_DESCENT:
-      rocket.final_descent();
-      rocket.nextState = FINAL_DESCENT; //is there a better idea for here??
+      if (rocket.final_descent()) //returns true when we've landed
+        rocket.nextState = LANDED;
+      else
+        rocket.nextState = FINAL_DESCENT;
       break;
+
+    case LANDED:
+      rocket.flight_complete();
       
   }
 
-  
   //Get Ready for next loop
   rocket.currentState = rocket.nextState;
   delay(50);
 
-
-
-
-
-
- 
   Serial.print("\nCurrent State: ");
   Serial.println(rocket.currentState);
   Serial.print("Next State: ");
   Serial.println(rocket.nextState);
-
-
-
-
-
-
-
-
-
-
-  
+    
 }

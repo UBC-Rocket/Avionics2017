@@ -14,7 +14,6 @@ class Rocket
   public:
     Rocket(int currentState, int nextState);
 	void setRocketStates(int currentState, int nextState);
-	void reset();
 
 	bool detect_launch(float curr_accel, int launch_count);
 	bool detect_burnout(float curr_accel, float prev_accel, int burnout_count, unsigned long launch_time, unsigned long curr_time);
@@ -25,11 +24,11 @@ class Rocket
 	bool deploy_payload();
 	bool detect_main_alt(float curr_altitude);
 	bool deploy_main();
-	void final_descent();
+	bool final_descent();
+	void flight_complete();
 	
 	int currentState;
 	int nextState;
-	
 
 };
 
