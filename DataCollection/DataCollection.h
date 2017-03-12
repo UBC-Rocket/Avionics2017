@@ -17,31 +17,32 @@
 typedef short int16_t;
 
 class DataCollection {
-  
-  
-  
-  
-public:
- 	int16_t gyroReadings[BUFFER_SIZE][3];
+  MPU mpu();
+  MPL mpl();
+
+  int bufPosition;
+  int16_t gyroReadings[BUFFER_SIZE][3];
 	int16_t accelReadings[BUFFER_SIZE][3];
 	int16_t magReadings[BUFFER_SIZE][3];
 	float altReadings[BUFFER_SIZE];
+  unsigned long time[BUFFER_SIZE];
+  bool bufferLock;
 
-
-	float filteredAltReadings[BUFFER_SIZE];
+public:
 	float kalmanError;
 	float predictionError = 1;
 
-	int bufPosition = 1;
-	int writePosition = 0;
+  int collectAndFilter();
+  int popGyro(int16_t* gyro);
+  int popAccel(int16_t* accel);
+  int popMag(int16_t* mag);
+  float popAlt();
 
-	void readData(MPL* alt);
-	void filterData(MPL* alt);
-	void writeBuffer();
- 
+	int filterData();
+	int collect();
+  int writeData();
+
+private:
+  int loadBuffer3(int16_t data[], int16_t buf[][3]);
 };
-#endif 
-
-
-
-
+#endif
