@@ -1,6 +1,12 @@
 #include "MPL.h"
 #include <i2c_t3.h>
 
+#define CTRL1_REG 0x26
+#define ADDRESS 0x60		// Sensor I2C address
+
+#define NUM_SAMPLES_AVG 100 // Number of samples we want to average
+
+//Do we still need these?
 //#define PWR_MNG 0x6B //register address of pwr management
 //#define USR_CNTRL 0x6A //register address of user control
 
@@ -14,175 +20,141 @@
 #define REG_INIT 0xA1
 
 
-MPL::MPL(bool pickWire1) {
-  wire = pickWire1;
-  error = 0.75;
-  predictConstant= 1.2;
-  ground_set = false;
-  if(wire){
+int MPL::begin(bool whichWire) {
+  wire = whichWire;
+  groundSet = false;
+
+  if(wire) {
      Wire1.begin();
+     Wire1.setDefaultTimeout(2500);
   }
   else {
     Wire.begin();
+    Wire.setDefaultTimeout(2500);
   }
-  debug("before reset chip");
-  init();
-}
 
-// Resets the altimeter via software
-void MPL::resetChip() {
-  writeByte(0x26, 0x04);
-  init();
-  delay(100);
-}
-
-//  s to see that the altimeter is connected and functional
-//  and sets up the control registers
-boolean MPL::init() {
-  debug("in init");
-  readByte(0x0C) == 196;
-
-  delay(100);
-
-  writeByte(0x26, REG_INIT);
-
-  delay(1000);
-
-  setGround();
-
+  writeByte(CTRL1_REG, REG_INIT); //initialize
   num_samples_avg = NUM_SAMPLES_AVG;
 
-  delay(1000);
-  return true;
+  groundLevel = 0;
 
+  return 0;
 }
 
+/*
+Set the ground level to be subtracted off the real altitude measurement
+*/
 void MPL::setGround() {
   debug("in setGround");
-  ground_level = 0.0;
+  groundLevel = 0.0;
   int readings = 100; //might want to think about the optimal number for this
   float finding_gnd = 0;
 
-  for(int xxx = 0; xxx < readings; xxx++){
-	delay (50);
-	ground_level += readAltitude();
-    //delay(100);
-	debug(xxx);
-	debug(ground_level);
+  for(int x = 0; x < readings; x++) {
+    delay (50);
+    groundLevel += readAlt();
+    debug(x);
+    debug(groundLevel);
   }
-  ground_level /= readings;
-  ground_set = true;
+  groundLevel /= readings;
 }
 
-float MPL::getOffset() {
-  return ground_level;
+/*
+Reads the current altitude in meters and return that value minus the gound level offset if it has been set.
+*/
+float MPL::readAGL() {
+  return readAlt() - groundLevel;
 }
 
-//  Reads the current altitude in meters
-float MPL::readAltitude() {
+float MPL::readAlt() {
   //The following will force a read:
-  writeByte(0x26, REG_INIT+2); //This forces the chip to make a reading
-  writeByte(0x26, REG_INIT); //OST bit set to 1
+  writeByte(CTRL1_REG, REG_INIT+2); //This forces the chip to make a reading
+  writeByte(CTRL1_REG, REG_INIT); //OST bit set to 1
 
-  int u_altitude, m_altitude;
-  float l_altitude;
+  uint8_t altH, altL;
+  float altF;
 
-  uint8_t _buffer[3] = {0};
+  uint8_t buffer[3] = {0};
 
-  readBytes(0x01, 3, _buffer);
+  readBytes(0x01, 3, buffer);
 
-  u_altitude = _buffer[0] << 8;//  The upper 8 bits of the altitude
-  m_altitude = _buffer[1];//  The middle 8 bits of the altitude
-  l_altitude = float(_buffer[2] >> 4) / 16.0;//  The lower 4 bits of the altitude
+  altH = buffer[0]; //The high byte of the altitude
+  altL = buffer[1];//  The low byte of the altitude
+  altF = float(buffer[2] >> 4) / 16.0; //The fractional component of the altitude
 
-
-  int16_t _temp = u_altitude | m_altitude;
-  if(ground_set){
-    if (_temp < 0) {
-      return float(_temp) - l_altitude - ground_level;
-    }
-    else {
-      return float(_temp) + l_altitude - ground_level;
-    }
-  }
-
-  else {
-    if (_temp < 0) {
-      return float(_temp) - l_altitude;
-    }
-    else {
-      return float(_temp) + l_altitude;
-    }
-  }
-
+  return ((altH << 8) | altL) + altF;
 }
 
-float MPL::readTemp()
-{
-  int8_t u_temp;
-  float l_temp;
-  uint8_t _buffer[2];
-  readBytes(0x04, 2, _buffer);
+/*
+returns the temperature in degrees Celsius
+*/
+float MPL::readTemp() {
+  int8_t tempH;
+  float tempF;
+  uint8_t buffer[2];
+  readBytes(0x04, 2, buffer); //read temperature register
 
-  u_temp = _buffer[0];//  Upper 8 bits of the temperature, representing the numbers before the decimal
-  l_temp = float(_buffer[1] >> 4) / 16.0;//  Lower 4 bits of the temperature, representing the numbers
+  tempH = buffer[0];//  Upper 8 bits of the temperature, representing the numbers before the decimal
+  tempF = float(buffer[1] >> 4) / 16.0;//  Lower 4 bits of the temperature, representing the numbers
 
-  return float(u_temp) + l_temp;
+  return tempH + tempF;
 }
 
 //  Writes a byte of data to the sensor at the given address WORKS
-byte MPL::writeByte(byte _regAddr, byte _value)
-{
+uint8_t MPL::writeByte(byte regAddr, byte value) {
   if(!wire) {
     Wire.beginTransmission(ADDRESS);
-    Wire.write(_regAddr);
-    Wire.write(_value);
+    Wire.write(regAddr);//load target reg
+    Wire.write(value); //load value into target reg
+
     return Wire.endTransmission(true);
-  }
-  else {
+  } else {
     Wire1.beginTransmission(ADDRESS);
-    Wire1.write(_regAddr);
-    Wire1.write(_value);
+    Wire1.write(regAddr);
+    Wire1.write(value);
+
     return Wire1.endTransmission(true);
   }
 }
 
-int MPL::readBytes(byte _regAddr, uint8_t _length, uint8_t *_data){
-  if(!_data) return -1;
+//  read "length" bytes starting at a given address and loads the values into the given array pointer
+int MPL::readBytes(byte regAddr, uint8_t length, uint8_t *data){
+  if(!data) return -1;
 
   if(wire) {
-
     Wire1.beginTransmission(ADDRESS);
-    Wire1.write(_regAddr);
+    Wire1.write(regAddr);
     Wire1.endTransmission(false);// or I2C_NOSTOP?
-    Wire1.requestFrom(ADDRESS, _length); // Request the data...
+    Wire1.requestFrom(ADDRESS, length); // Request the data...
 
-    for (int _i = 0; _i < _length; _i++) {
-      _data[_i] = Wire1.read();
+    for (int i = 0; i < length; i++) {
+      data[i] = Wire1.read();
     }
+
     return Wire1.endTransmission(true);
-  }
-
-  else {
+  } else {
     Wire.beginTransmission(ADDRESS);
-    Wire.write(_regAddr);
+    Wire.write(regAddr);
     Wire.endTransmission(false);// or I2C_NOSTOP?
-    Wire.requestFrom(ADDRESS, _length); // Request the data...
+    Wire.requestFrom(ADDRESS, length); // Request the data...
 
-    for (int _i = 0; _i < _length; _i++) {
-      _data[_i] = Wire.read();
+    for (int i = 0; i < length; i++) {
+      data[i] = Wire.read();
     }
 
     return Wire.endTransmission(true);
-    }
   }
+}
 
+//read ONE byte from the given reg and returns the unsigned value
   uint8_t MPL::readByte(uint8_t reg) {
     uint8_t data;
     readBytes(reg, 1, &data);
     return data;
   }
-
-void MPL::debug(String msg){
-  Serial.println(msg);
-}
+  /*
+  serial prints a given string message
+  */
+  void MPL::debug(String msg){
+    Serial.println(msg);
+  }
