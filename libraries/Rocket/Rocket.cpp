@@ -9,7 +9,7 @@
 #include "MPL.h"
 
 #define SIM_LAUNCH_ACCEL 	40 		//assuming sims are accurate, > 40
-#define SIM_BURNOUT_ACCEL	4
+#define SIM_BURNOUT_ACCEL	1
 #define NUM_CHECKS 			4
 #define MAIN_ALT			15000 	//height at which to deploy the main
 
@@ -30,20 +30,25 @@ bool Rocket::detect_launch(float curr_accel, int launch_count) {
 	
 	if (launch_count > NUM_CHECKS)
 		return true;
-	else 
-		return false;	
+	else{
+		launch_count = 0;
+		return false;
+	}
 }
 
 bool Rocket::detect_burnout(float curr_accel, float prev_accel, int burnout_count, unsigned long launch_time, unsigned long curr_time) {
 	//giant drop in acceleration, max velocity (baby delay)
 	
-	if ((prev_accel - curr_accel) > SIM_BURNOUT_ACCEL ) //will the data be stable enough for this..?
+	if (abs(prev_accel - curr_accel) > SIM_BURNOUT_ACCEL ) //will the data be stable enough for this..?
 		burnout_count++;
 	
 	if ((burnout_count > NUM_CHECKS) || (curr_time > (launch_time + 4500)))
 		return true;
-	else 
+	else{
+		burnout_count = 0;
 		return false;
+	}
+		
 }
 
 /*
@@ -52,16 +57,22 @@ bool Rocket::detect_burnout(float curr_accel, float prev_accel, int burnout_coun
  * if yes, return TRUE
  * if no, return FALSE  
  */
-bool Rocket::coasting(){
+bool Rocket::coasting(float curr_accel, int coasting_count){
 	//TODO: figure out what kind of data threshold we should be looking for
 	//Returns true if one of the following is true: timeout, decrease in delta 
 	//accel, or the barometric data stabalizes a lot
 	
-	bool apogee = false;
+	if (curr_accel < 10.5)
+		coasting_count++;
 	
-	//if we think we're at apogee, apogee = true
+	if(coasting_count > NUM_CHECKS)
+		return true;
 	
-	return apogee;
+	else{
+		coasting_count = 0;
+		return false;
+	}
+		
 }
 
 /*
@@ -70,15 +81,22 @@ bool Rocket::coasting(){
  * if yes, return TRUE
  * if no, return FALSE  
  */
-bool Rocket::test_apogee(){
+bool Rocket::test_apogee(float curr_altitude, float prev_altitude, int test_apogee_count){
 	//Passes if one of the following is true: 
 	//delta pressure is positive or delta accel is BIG
 	//check this a few times
-	bool apogee = false;
 	
-	//if we confirm we're at apogee, apogee = true
+	if((curr_altitude - prev_altitude) > 0)
+		test_apogee_count++;
 	
-	return apogee; 
+	if(test_apogee_count > NUM_CHECKS)
+		return true;
+	else{
+		test_apogee_count = 0;
+		return false;
+		
+	}
+	
 }
 
 /*
@@ -119,16 +137,21 @@ bool Rocket::deploy_payload(){
  * if yes, return TRUE 
  * if no, return FALSE
  */
-bool Rocket::detect_main_alt(float curr_altitude){
+bool Rocket::detect_main_alt(float curr_altitude, int detect_main_alt_count){
 	
 	//want it less than main alt in case something goes horribly wrong 
 	//and we should deploy it when we're close to the ground 
 	if (curr_altitude < MAIN_ALT){ 
-		return true;
+		detect_main_alt_count++;
 	}
 	
-	else
+	if (detect_main_alt_count < NUM_CHECKS){
+		return true;
+	}
+	else{
+		detect_main_alt_count = 0;
 		return false;
+	}
   
 }
 
@@ -152,10 +175,19 @@ bool Rocket::deploy_main(){
 /*
  * Final_Descent 
  */
-bool Rocket::final_descent(){
+bool Rocket::final_descent(float curr_altitude, float prev_altitude, float curr_accel, float prev_accel, int final_descent_count){
 	//read accel data to see if we've stopped moving
 	//return true when we've landed
-	return false;
+	if (((curr_altitude - prev_altitude) == 0)&& (curr_accel - prev_accel) == 0)
+		final_descent_count++;
+	
+	if (final_descent_count > NUM_CHECKS)
+		return true;
+	else{
+		final_descent_count = 0;
+		return false;
+	}
+		
 }
 
 void Rocket::flight_complete(){

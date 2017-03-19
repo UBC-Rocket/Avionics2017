@@ -35,6 +35,10 @@ DataCollection* dataCollector;
 //count variables for decisions
 int launch_count = 0;
 int burnout_count = 0;
+int coasting_count = 0;
+int test_apogee_count = 0;
+int detect_main_alt_count = 0;
+int final_descent_count = 0;
 
 //time variables
 unsigned long launch_time;
@@ -42,7 +46,9 @@ unsigned long curr_time;
 
 //temp for printing and TESTING
 float curr_altitude;
+float prev_altitude;
 int16_t curr_Acc[3];
+int16_t prev_Acc[3];
 
 void setup() {
 
@@ -79,30 +85,31 @@ void loop(){
   curr_Acc[0] = dataCollector->currentAcceleration[0];
   curr_Acc[1] = dataCollector->currentAcceleration[1];
   curr_Acc[2] = dataCollector->currentAcceleration[2];
+  //TODO: sqrt squared of these values??
   Serial.println("Current Acceleration X: " + (String)curr_Acc[0] + " Y: "+(String)curr_Acc[1] + " Z: " +(String)curr_Acc[2]);
 
   //MAKE A STATE CHANGE----------------------------------------
   switch (rocket.currentState){
       
     case STANDBY:
-      if (rocket.detect_launch(0, launch_count)){
+      if (rocket.detect_launch(curr_Acc[2], launch_count)){
         rocket.nextState = POWERED_ASCENT;
         launch_time = millis();
       }
       break;
       
     case POWERED_ASCENT:
-      rocket.detect_burnout(0, 0, burnout_count, launch_time, curr_time);
+      rocket.detect_burnout(curr_Acc[2], prev_Acc[2], burnout_count, launch_time, curr_time);
       rocket.nextState = COASTING;
       break;
       
     case COASTING:
-      rocket.coasting();
+      rocket.coasting(curr_Acc[2], coasting_count);
       rocket.nextState = TEST_APOGEE;
       break;
       
     case TEST_APOGEE:
-      if (rocket.test_apogee()){
+      if (rocket.test_apogee(curr_altitude, prev_altitude, test_apogee_count)){
         rocket.nextState = DEPLOY_DROGUE;
       }
       else{
@@ -123,7 +130,7 @@ void loop(){
       break;
       
     case INITIAL_DESCENT:
-      if(rocket.detect_main_alt(curr_altitude)){
+      if(rocket.detect_main_alt(curr_altitude, detect_main_alt_count)){
         rocket.nextState = DEPLOY_MAIN;
       }
       break;
@@ -134,7 +141,7 @@ void loop(){
       break;
       
     case FINAL_DESCENT:
-      if (rocket.final_descent()) //returns true when we've landed
+      if (rocket.final_descent(curr_altitude, prev_altitude, curr_Acc[2], prev_Acc[2], final_descent_count)) //returns true when we've landed
         rocket.nextState = LANDED;
       else
         rocket.nextState = FINAL_DESCENT;
@@ -154,5 +161,11 @@ void loop(){
   Serial.println(rocket.currentState);
   Serial.print("Next State: ");
   Serial.println(rocket.nextState);
-    
+
+  prev_Acc[0] = curr_Acc[0];
+  prev_Acc[1] = curr_Acc[1];
+  prev_Acc[2] = curr_Acc[2];
+
+  prev_altitude = curr_altitude;
+  
 }
