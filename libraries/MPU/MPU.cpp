@@ -362,12 +362,6 @@ int MPU::readMag(int16_t* data) {
   return 0;
 }
 
-void MPU::cleanGyro(float* cleanData, int16_t* data) {
-  for(int i = 0; i < 3; i++) {
-    cleanData[i] = data[i] * gyroFS / shortFS;
-  }
-}
-
 int MPU::readDMP(long quat[]) {
   int err;
   uint8_t data[16];

@@ -21,9 +21,6 @@ public:
   // Initialization functions
   void setGround();
 
-  // Check for data functions
-  bool getDataReady();
-
   // Read data functions
   float readAGL();
   float readAlt();
