@@ -42,10 +42,10 @@ int MPL::begin(bool whichWire) {
   return 0;
 }
 
-int selfTest() {
+int MPL::selfTest() {
   if(wire) {
     Wire1.setDefaultTimeout(100);
-    
+
     Wire1.setDefaultTimeout(WIRE_TIMEOUT);
 
   } else {
