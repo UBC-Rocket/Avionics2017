@@ -279,10 +279,17 @@ int MPU::begin(bool whichWire, uint8_t Addr) {
 }
 
 int MPU::selfTest() {
-  uint8_t test;
-  test = read(WHOAMI);
-
-  return test;
+  int test;
+  uint8_t tmp;
+  if(wire) {
+    Wire1.setDefaultTimeout(100);
+    test = read(WHOAMI, 1, tmp);
+    Wire1.setDefaultTimeout(WIRE_TIMEOUT);
+  } else {
+    Wire.setDefaultTimeout(100);
+    test = read(WHOAMI, 1, tmp);
+    Wire.setDefaultTimeout(WIRE_TIMEOUT);
+  }
 }
 
 int MPU::initGyro(uint16_t fullScale) {
@@ -360,12 +367,6 @@ int MPU::readMag(int16_t* data) {
   data[1] = rawData[3] | (rawData[2]<<8);
   data[2] = rawData[5] | (rawData[4]<<8);
   return 0;
-}
-
-void MPU::cleanGyro(float* cleanData, int16_t* data) {
-  for(int i = 0; i < 3; i++) {
-    cleanData[i] = data[i] * gyroFS / shortFS;
-  }
 }
 
 int MPU::readDMP(long quat[]) {
