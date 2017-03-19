@@ -329,7 +329,7 @@ int MPU::initMag() {
   return 0;
 }
 
-int MPU::readGyro(int16_t *data) {
+int MPU::readGyro(int16_t data[]) {
   uint8_t rawData[6];
   int err;
   if(err = read(GYRO_BASE, 6, rawData)) return err;
@@ -340,7 +340,7 @@ int MPU::readGyro(int16_t *data) {
   return 0;
 }
 
-int MPU::readAccel(int16_t *data) {
+int MPU::readAccel(int16_t data[]) {
   uint8_t rawData[6];
   int err;
   if(err = read(ACCEL_BASE, 6, rawData)) return err;
@@ -351,7 +351,7 @@ int MPU::readAccel(int16_t *data) {
   return 0;
 }
 
-int MPU::readMag(int16_t* data) {
+int MPU::readMag(int16_t data[]) {
   uint8_t rawData[6];
   int err;
   if(err = read(MAG_BASE, 6, rawData)) return err;
@@ -451,7 +451,7 @@ void MPU::debug(String msg){
 }
 
 
-int MPU::writeMem(uint16_t addr, uint8_t length, uint8_t *data) {
+int MPU::writeMem(uint16_t addr, uint8_t length, uint8_t data[]) {
   int err;
 
   if(!data) return -1;
@@ -469,7 +469,7 @@ int MPU::writeMem(uint16_t addr, uint8_t length, uint8_t *data) {
   return 0;
 }
 
-int MPU::readMem(uint16_t addr, uint8_t length, uint8_t *data) {
+int MPU::readMem(uint16_t addr, uint8_t length, uint8_t data[]) {
   int err;
   if(!data) return -1;
   uint8_t addrBytes[2];
@@ -484,10 +484,10 @@ int MPU::readMem(uint16_t addr, uint8_t length, uint8_t *data) {
 }
 
 int MPU::write(uint8_t reg, uint8_t data) {
-  return write(reg, 1, &data);
+  return write(reg, 1, data);
 }
 
-int MPU::write(uint8_t reg, uint8_t length, uint8_t *data) {
+int MPU::write(uint8_t reg, uint8_t length, uint8_t data[]) {
   if(!data) return -1;
 
   if(wire) {
@@ -505,11 +505,11 @@ int MPU::write(uint8_t reg, uint8_t length, uint8_t *data) {
 
 uint8_t MPU::read(uint8_t reg) {
   uint8_t data;
-  read(reg, 1, &data);
+  read(reg, 1, data);
   return data;
 }
 
-int MPU::read(uint8_t reg, uint8_t length, uint8_t *data) {
+int MPU::read(uint8_t reg, uint8_t length, uint8_t data[]) {
   if(!data) return -1;
 
   if(wire) {
