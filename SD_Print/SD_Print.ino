@@ -1,9 +1,8 @@
 
 /*
- * UBC ROCKET - Pressure Sensor Vacuum Chamber Test Code
+ * UBC ROCKET - Print SD Data to Serial
  */
 
-#include "MPL.h"
 #include <i2c_t3.h>
 #include <TimerOne.h>
 #include <stdio.h>
@@ -12,28 +11,9 @@
 #include <SPI.h>
 
 
-/*
- * Ignition Circuit Definitions
- */
- 
-const int DROGUE_IGNITION_CIRCUIT = 7;  //pin to drogue chute ignition circuit
-const int MAIN_IGNITION_CIRCUIT = 8; //pin to nose cone ignition circuit
-
-/*
- * MPL Initializations
- */
-
-int i = 0; 
-bool w = false;
-MPL* PSensor;
+const int LED_PIN = 7;  
 
 File flightData;
-
-float curr_altitude; 
-
-unsigned long drogue_launch_time;
-unsigned long main_launch_time;
-unsigned long curr_time;
 
 #define BUFFER_SIZE 10
 #define CS 4 //chip select pin
@@ -52,8 +32,9 @@ void setup() {
   //must initialize teensy pin 10 as output or SD lib does not work
   pinMode(10, OUTPUT);
 
-  pinMode(DROGUE_IGNITION_CIRCUIT, OUTPUT);
-  digitalWrite(DROGUE_IGNITION_CIRCUIT, HIGH);
+  //LED ON as start signal
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, HIGH);
   
   delay(2000);
   
@@ -78,7 +59,7 @@ void setup() {
   
   printDirectory(root, 0);
   
-  if(!SD.exists("/TEST/FLIGHT~3.TXT")){
+  if(!SD.exists("FLIGHT~1.TXT")){
     Serial.println("File does not exist");
     return;
   }
@@ -87,7 +68,7 @@ void setup() {
   Serial.println("Reading test file...");
   Serial.println("---------------");
   
-  File myfile = SD.open("/TEST/FLIGHT~3.TXT");
+  File myfile = SD.open("FLIGHT~1.TXT");
   
 
   
@@ -114,7 +95,7 @@ void setup() {
   Serial.println(myfile.position());
 
   
-  digitalWrite(DROGUE_IGNITION_CIRCUIT, LOW);
+  digitalWrite(LED_PIN, LOW);
 
   return;
   
