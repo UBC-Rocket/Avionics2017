@@ -5,6 +5,7 @@
 #define ADDRESS 0x60		// Sensor I2C address
 
 #define NUM_SAMPLES_AVG 100 // Number of samples we want to average
+#define WIRE_TIMEOUT 1000
 
 //Do we still need these?
 //#define PWR_MNG 0x6B //register address of pwr management
@@ -26,11 +27,11 @@ int MPL::begin(bool whichWire) {
 
   if(wire) {
      Wire1.begin();
-     Wire1.setDefaultTimeout(2500);
+     Wire1.setDefaultTimeout(WIRE_TIMEOUT);
   }
   else {
     Wire.begin();
-    Wire.setDefaultTimeout(2500);
+    Wire.setDefaultTimeout(WIRE_TIMEOUT);
   }
 
   writeByte(CTRL1_REG, REG_INIT); //initialize
@@ -39,6 +40,19 @@ int MPL::begin(bool whichWire) {
   groundLevel = 0;
 
   return 0;
+}
+
+int selfTest() {
+  if(wire) {
+    Wire1.setDefaultTimeout(100);
+    
+    Wire1.setDefaultTimeout(WIRE_TIMEOUT);
+
+  } else {
+    Wire.setDefaultTimeout(100);
+
+    Wire.setDefaultTimeout(WIRE_TIMEOUT);
+  }
 }
 
 /*
