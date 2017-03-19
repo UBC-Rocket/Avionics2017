@@ -116,3 +116,11 @@ int DataCollection::loadBuffer3(int16_t* data[], int16_t* buf[][3]) {
   buf[bufferPosition][1] = data[1];
   buf[bufferPosition][2] = data[2];
 }
+
+int DataCollection::verifySensor(MPL mpl) {
+  mpl.
+}
+
+int DataCollection::verifySensor(MPU mpu) {
+
+}
