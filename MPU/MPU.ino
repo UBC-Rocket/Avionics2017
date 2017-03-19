@@ -35,7 +35,7 @@ void setup() {
   Serial.begin(9600);
   delay(2000);
   Serial.println("hi");
-  test.begin(0, ADDR);
+  test.begin(1, ADDR);
   Serial.println("Loading DMP ");
   Serial.println(test.loadDMP());
 
@@ -50,7 +50,6 @@ void loop() {
   elapsed = micros() - elapsed;
   Serial.println("Running: ");
   Serial.println("Reading DMP ");
-  while(test.readDMP(quat) == -1)
   Serial.println(test.readDMP(quat));
   Serial.println("Quat data: ");
   
@@ -60,12 +59,12 @@ void loop() {
   Serial.println(quat[3]);
 
   Serial.println("Angle Data: ");
-  //parseQuat(quat, angles);
+  parseQuat(quat, angles);
 
   Serial.println(angles[0]);
   Serial.println(angles[1]);
   Serial.println(angles[2]);
-  
+  delay(10);
 
 
 //  x_pos = (x_pos > 360) ? (x_pos - 360) : x_pos;

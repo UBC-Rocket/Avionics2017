@@ -38,3 +38,4 @@ private:
   int read(uint8_t reg, uint8_t length, uint8_t *data);
 };
 #endif
+

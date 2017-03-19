@@ -14,8 +14,10 @@
 	mpu1.initMag();
 
 	// Initialize MPL
-	PSensor1 = new MPL(0);
-
+	PSensor1 = new MPL;
+	PSensor1->begin(0);
+	PSensor1->setGround(); // think we need this (???? double check)
+	
 	//Initialize pins for ignition circuits as outputs
 	
 	update();
@@ -32,7 +34,7 @@ int DataCollection::update() {
 
 	//TEMP TO TEST NOT REALLY THE OPERATIONS
 	previousALTITUDE = currentALTITUDE;
-	currentALTITUDE = PSensor1->readAltitude();
+	currentALTITUDE = PSensor1->readAlt();
 
 
 	//these will have to be a convertion to float later

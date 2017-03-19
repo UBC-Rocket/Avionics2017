@@ -8,9 +8,10 @@
 #include "MPU.h"
 #include "MPL.h"
 
-#define SIM_LAUNCH_ACCEL 	40 //assuming sims are accurate, > 40
+#define SIM_LAUNCH_ACCEL 	40 		//assuming sims are accurate, > 40
 #define SIM_BURNOUT_ACCEL	4
 #define NUM_CHECKS 			4
+#define MAIN_ALT			15000 	//height at which to deploy the main
 
 // Rocket State Contructor
 Rocket::Rocket(int initialCurrentState, int initialNextState)
@@ -18,15 +19,6 @@ Rocket::Rocket(int initialCurrentState, int initialNextState)
 	currentState = initialCurrentState;
 	nextState = initialNextState;
 	//setRocketStates(currentState, nextState);
-}
-
-/*
- * Reset function will be called once at the beginning of each use
- * Calibrate all the sensors
- * (I low key think we should get rid of this)
- */
-void Rocket::reset() {
-	//do stuff here 
 }
 
 bool Rocket::detect_launch(float curr_accel, int launch_count) {
@@ -62,7 +54,8 @@ bool Rocket::detect_burnout(float curr_accel, float prev_accel, int burnout_coun
  */
 bool Rocket::coasting(){
 	//TODO: figure out what kind of data threshold we should be looking for
-	//looking at acceleration data 
+	//Returns true if one of the following is true: timeout, decrease in delta 
+	//accel, or the barometric data stabalizes a lot
 	
 	bool apogee = false;
 	
@@ -78,6 +71,9 @@ bool Rocket::coasting(){
  * if no, return FALSE  
  */
 bool Rocket::test_apogee(){
+	//Passes if one of the following is true: 
+	//delta pressure is positive or delta accel is BIG
+	//check this a few times
 	bool apogee = false;
 	
 	//if we confirm we're at apogee, apogee = true
@@ -125,7 +121,9 @@ bool Rocket::deploy_payload(){
  */
 bool Rocket::detect_main_alt(float curr_altitude){
 	
-	if (curr_altitude == 1500){
+	//want it less than main alt in case something goes horribly wrong 
+	//and we should deploy it when we're close to the ground 
+	if (curr_altitude < MAIN_ALT){ 
 		return true;
 	}
 	
@@ -154,7 +152,12 @@ bool Rocket::deploy_main(){
 /*
  * Final_Descent 
  */
-void Rocket::final_descent(){
-	//only save data to SD?
+bool Rocket::final_descent(){
+	//read accel data to see if we've stopped moving
+	//return true when we've landed
+	return false;
 }
 
+void Rocket::flight_complete(){
+	//stop recording data to the SD card 
+}

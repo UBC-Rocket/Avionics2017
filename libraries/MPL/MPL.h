@@ -12,6 +12,7 @@ typedef short int16_t;
 class MPL {
   int num_samples_avg;
   bool wire;
+  bool groundSet;
   float groundLevel;
 
 public:

@@ -22,7 +22,7 @@
 
 int MPL::begin(bool whichWire) {
   wire = whichWire;
-  ground_set = false;
+  groundSet = false;
 
   if(wire) {
      Wire1.begin();
@@ -52,16 +52,15 @@ void MPL::setGround() {
 
   for(int x = 0; x < readings; x++) {
     delay (50);
-    ground_level += readAltitude();
+    groundLevel += readAlt();
     debug(x);
-    debug(ground_level);
+    debug(groundLevel);
   }
-  ground_level /= readings;
+  groundLevel /= readings;
 }
 
 /*
 Reads the current altitude in meters and return that value minus the gound level offset if it has been set.
-
 */
 float MPL::readAGL() {
   return readAlt() - groundLevel;
@@ -96,7 +95,7 @@ float MPL::readTemp() {
   readBytes(0x04, 2, buffer); //read temperature register
 
   tempH = buffer[0];//  Upper 8 bits of the temperature, representing the numbers before the decimal
-  tempF = float(_buffer[1] >> 4) / 16.0;//  Lower 4 bits of the temperature, representing the numbers
+  tempF = float(buffer[1] >> 4) / 16.0;//  Lower 4 bits of the temperature, representing the numbers
 
   return tempH + tempF;
 }
