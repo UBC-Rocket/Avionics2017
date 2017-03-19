@@ -65,7 +65,7 @@ void setup() {
 
   // Open existing file on SD card
   //Serial.println("Opening test file..."); 
-  flightData = SD.open("FLIGHT~1.TXT", FILE_WRITE);
+  flightData = SD.open("FLIGHT~2.TXT", FILE_WRITE);
   
   if(flightData){
     flightData.println("-----------------");
@@ -101,9 +101,9 @@ void loop(){
   Serial.println("Reading sensor data");
   curr_time = millis();
   curr_alt = PSensor.readAlt();
-  IMU.readGyro(&curr_gyro); 
-  IMU.readAccel(&curr_accel); 
-  IMU.readMag(&curr_mag); 
+  IMU.readGyro(curr_gyro); 
+  IMU.readAccel(curr_accel); 
+  IMU.readMag(curr_mag); 
 
   Serial.println("---------------");
 
@@ -127,7 +127,7 @@ void loop(){
     k++;
   }
   
-  flightData = SD.open("FLIGHT~1.TXT", FILE_WRITE);
+  flightData = SD.open("FLIGHT~2.TXT", FILE_WRITE);
   flightData.println(dataString);
   Serial.println("Printed to data log");
   flightData.flush();
