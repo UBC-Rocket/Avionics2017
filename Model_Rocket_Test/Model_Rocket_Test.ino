@@ -17,7 +17,7 @@
 int i = 0;  //data write position accel
 int j = 0;  //data write position gyro
 int k = 0;  //data write position mag
-bool w = false; //wire for sensor initialization
+bool w = 1; //wire for sensor initialization
 
 //initialize sensors
 MPL PSensor;
@@ -92,6 +92,8 @@ void setup() {
   IMU.initAccel(16);
   IMU.initMag();
 
+  Serial.println("Sensor self test:");
+  Serial.println(IMU.selfTest());
 }
 
 void loop(){
@@ -106,7 +108,13 @@ void loop(){
   IMU.readMag(curr_mag); 
 
   Serial.println("---------------");
-
+  Serial.println("readGyro returns:");
+  Serial.println(IMU.readGyro(curr_gyro));
+  Serial.println("readAccel returns:");
+  Serial.println(IMU.readAccel(curr_accel));
+  Serial.println("readMag returns:");
+  Serial.println(IMU.readMag(curr_mag));
+  
   dataString += (curr_time/1000.0);
   dataString += (", ");
   dataString += (curr_alt);  
@@ -126,13 +134,16 @@ void loop(){
     dataString += (", ");  
     k++;
   }
-  
+
+  /*
   flightData = SD.open("FLIGHT~2.TXT", FILE_WRITE);
   flightData.println(dataString);
   Serial.println("Printed to data log");
   flightData.flush();
   flightData.close();
-
+*/
+  Serial.println("Output to SD:");
+  Serial.println(dataString);
   // Re-initialize data string and indices
   dataString = "";
   i=0;

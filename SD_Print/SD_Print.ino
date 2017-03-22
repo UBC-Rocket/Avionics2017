@@ -59,7 +59,7 @@ void setup() {
   
   printDirectory(root, 0);
   
-  if(!SD.exists("FLIGHT~1.TXT")){
+  if(!SD.exists("FLIGHT~2.TXT")){
     Serial.println("File does not exist");
     return;
   }
@@ -68,7 +68,7 @@ void setup() {
   Serial.println("Reading test file...");
   Serial.println("---------------");
   
-  File myfile = SD.open("FLIGHT~1.TXT");
+  File myfile = SD.open("FLIGHT~2.TXT");
   
 
   
