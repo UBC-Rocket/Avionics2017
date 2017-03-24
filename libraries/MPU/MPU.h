@@ -22,7 +22,8 @@ public:
   int readAccel(int16_t *data);
   int readMag(int16_t *data);
 
-  void cleanGyro(float *cleanData, int16_t *data);
+  int readGyro(float *data);
+  int readAccel(float *data);
 
   int readDMP(long quat[]);
   int loadDMP();
