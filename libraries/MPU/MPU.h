@@ -1,7 +1,6 @@
 #ifndef MPU_H
 #define MPU_H
 
-#include <Arduino.h>
 #include <inttypes.h>
 
 typedef short int16_t;
@@ -36,7 +35,6 @@ private:
 
   int write(uint8_t reg, uint8_t data);
   int write(uint8_t reg, uint8_t length, uint8_t *data);
-  uint8_t read(uint8_t reg);
   int read(uint8_t reg, uint8_t length, uint8_t *data);
 };
 #endif
