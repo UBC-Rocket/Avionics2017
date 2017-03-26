@@ -23,8 +23,9 @@
 #define REG_INIT 0xA1
 
 
-int MPL::begin(bool whichWire) {
+int MPL::begin(bool whichWire, uint8_t Addr) {
   wire = whichWire;
+  addr = Addr;
   groundSet = false;
 
   if(wire) {
@@ -65,7 +66,7 @@ void MPL::setGround() {
   debug("in setGround");
   groundLevel = 0.0;
   int readings = 100; //might want to think about the optimal number for this-----------------------------------
- 
+
   delay(500);
   for(int x = 0; x < readings; x++) {
     delay (100);
@@ -125,12 +126,12 @@ int MPL::write(uint8_t reg, uint8_t length, uint8_t *data) {
   if(!data) return -1;
 
   if(wire) {
-    Wire1.beginTransmission(ADDRESS);
+    Wire1.beginTransmission(addr);
     if(Wire1.write(reg) != 1) return -1;
     if(Wire1.write(data, length) != length) return -2;
     return Wire1.endTransmission(true);
   } else {
-    Wire.beginTransmission(ADDRESS);
+    Wire.beginTransmission(addr);
     if(Wire.write(reg) != 1) return -1;
     if(Wire.write(data, length) != length) return -2;
     return Wire.endTransmission(true);
@@ -142,21 +143,21 @@ int MPL::read(uint8_t reg, uint8_t length, uint8_t *data) {
   if(!data) return -1;
 
   if(wire) {
-    Wire1.beginTransmission(ADDRESS);//NOT THE RIGHT ADDRESS
+    Wire1.beginTransmission(addr);//NOT THE RIGHT ADDRESS
     Wire1.write(reg);
     Wire1.endTransmission(false);
 
-    Wire1.requestFrom(ADDRESS, length, false);
+    Wire1.requestFrom(addr, length, false);
     for(int i = 0; i < length; i++) {
       data[i] = Wire1.read();
     }
     return Wire1.endTransmission(true);
   } else {
-    Wire.beginTransmission(ADDRESS);
+    Wire.beginTransmission(addr);
     Wire.write(reg);
     Wire.endTransmission(false);
 
-    Wire.requestFrom(ADDRESS, length, false);
+    Wire.requestFrom(addr, length, false);
     for(int i = 0; i < length; i++) {
       data[i] = Wire.read();
     }

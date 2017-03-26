@@ -11,12 +11,13 @@ typedef short int16_t;
 
 class MPL {
   int num_samples_avg;
+  uint8_t addr;
   bool wire;
   bool groundSet;
   float groundLevel;
 
 public:
-  int begin(bool whichWire);
+  int begin(bool whichWire, uint8_t Addr);
 
   int selfTest();
 

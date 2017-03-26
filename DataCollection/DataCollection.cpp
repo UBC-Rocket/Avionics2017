@@ -1,14 +1,37 @@
 #include "DataCollection.h"
 
-int DataCollection::begin(MPU mpu[], MPL mpl[]) {
-  mpus = mpu;
-  mpls = mpl;
+#define ACCEL_FS 16
+#define GYRO_FS 2000
+
+int DataCollection::begin(MPU *mpu[], int MPUlen, MPL *mpl[], int MPLlen) {
+  bufPosition = 0;
+
+  MPULength = MPUlen;
+  MPLLength = MPLlen;
+
+  for(int i = 0; i < MPULength; i++) {
+    mpus[i] = mpu[i];
+    mpuError[i] = 0;
+
+    mpus[i]->initAccel(ACCEL_FS);
+    mpus[i]->initGyro(GYRO_FS);
+    mpus[i]->initMag();
+  }
+
+  for(int i = 0; i < MPLLength; i++) {
+    mpls[i] = mpl[i];
+    mplError[i] = 0;
+  }
+
+  return 0;
 }
 
-int DataCollection::filterData();
+int DataCollection::filterData() {
+  return 0;
+}
 
 int DataCollection::popGyro(float gyro[]) {
-  if(bufferPosition < 1) return -1;
+  if(bufPosition < 1) return -1;
   readBuffer3(gyroReadings, gyro);
   return 0;
 }
@@ -20,7 +43,7 @@ int DataCollection::popGyro(float gyro[]) {
  */
 
 int DataCollection::popAccel(float accel[]) {
-  if(bufferPosition < 1) return -1;
+  if(bufPosition < 1) return -1;
   readBuffer3(accelReadings, accel);
   return 0;
 }
@@ -32,7 +55,7 @@ int DataCollection::popAccel(float accel[]) {
  */
 
 int DataCollection::popMag(float mag[]) {
-  if(bufferPosition < 1) return -1;
+  if(bufPosition < 1) return -1;
   readBuffer3(magReadings, mag);
   return 0;
 }
@@ -44,8 +67,8 @@ int DataCollection::popMag(float mag[]) {
  */
 
 int DataCollection::popAlt(float *alt) {
-  if(bufferPosition < 1) return -1;
-  return altReadings[bufferPosition - 1];
+  if(bufPosition < 1) return -1;
+  return altReadings[bufPosition - 1];
 }
 
 /**
@@ -55,11 +78,11 @@ int DataCollection::popAlt(float *alt) {
  */
 
 int DataCollection::collect() {
-  if(bufferPosition > BUFFER_SIZE) return 0;
+  if(bufPosition > BUFFER_SIZE) return 0;
   if(bufferLock) return -1;
   bufferLock = 1;
 
-  time[bufferPosition] = micros();
+  time[bufPosition] = micros();
   int droppedReadings; //number of sensor readings ignored due to communication issues
 
   //Buffers for one timestep of readings from all sensors.
@@ -68,37 +91,39 @@ int DataCollection::collect() {
   float mags[MPULength][3];
   float alts[MPLLength];
 
-  dropperReadings = 0;
+  droppedReadings = 0;
   for(int x = 0; x < MPULength; x++) {
     if(mpuError[x]) {
       droppedReadings++;
       continue;
     }
 
-    MPU mpu = mpus[x];
+    MPU *mpu = mpus[x];
+    debug("MPU" + (String)x + ":");
+    debug(mpu->selfTest());
 
     float tmp[3];
-    mpuError[x] = mpuError[x] ? mpuError[x] : mpu.readGyro(tmp);
-    loadBuffer3(tmp, gyro, x-droppedReadings);
+    mpuError[x] = mpuError[x] ? mpuError[x] : mpu->readGyro(tmp);
+    loadBuffer3(tmp, gyros, x-droppedReadings);
 
-    mpuError[x] = mpuError[x] ? mpuError[x] : mpu.readAccel(tmp);
-    loadBuffer3(tmp, accel, x-droppedReadings);
+    mpuError[x] = mpuError[x] ? mpuError[x] : mpu->readAccel(tmp);
+    loadBuffer3(tmp, accels, x-droppedReadings);
 
-    mpuError[x] = mpuError[x] ? mpuError[x] : mpu.readMag(tmp);
-    loadBuffer3(tmp, mag, x-droppedReadings);
+    mpuError[x] = mpuError[x] ? mpuError[x] : mpu->readMag(tmp);
+    loadBuffer3(tmp, mags, x-droppedReadings);
   }
 
   float tmp[3];
 
   //average each set of data from MPU and load in to buffer
   average3(gyros, MPULength - droppedReadings, tmp);
-  loadBuffer3(tmp, gyroReadings, bufferPosition);
+  loadBuffer3(tmp, gyroReadings, bufPosition);
 
   average3(gyros, MPULength - droppedReadings, tmp);
-  loadBuffer3(tmp, accelReadings, bufferPosition);
+  loadBuffer3(tmp, accelReadings, bufPosition);
 
   average3(gyros, MPULength - droppedReadings, tmp);
-  loadBuffer3(tmp, magReadings, bufferPosition);
+  loadBuffer3(tmp, magReadings, bufPosition);
 
   droppedReadings = 0;
   for(int x = 0; x < MPLLength; x++) {
@@ -107,18 +132,18 @@ int DataCollection::collect() {
       continue;
     }
 
-    MPL mpl = mpls[x];
+    MPL *mpl = mpls[x];
 
     float alt;
-    mplError[x] = mplError[x] ? mplError[x] : mpl.readAGL(&alt);
+    mplError[x] = mplError[x] ? mplError[x] : mpl->readAGL(&alt);
     alts[x - droppedReadings] = alt;
   }
 
-  alt[bufferPosition] = average(alts, MPLLength - droppedReadings);
+  alts[bufPosition] = average(alts, MPLLength - droppedReadings);
 
-  bufferPosition++;
+  bufPosition++;
   bufferLock = 0;
-  return BUFFER_SIZE - bufferPosition;
+  return BUFFER_SIZE - bufPosition;
 }
 
 /* writeData: writes contents of buffer to SD card.
@@ -128,39 +153,39 @@ int DataCollection::collect() {
 int DataCollection::writeData() {
   if (bufferLock) return -1;
   bufferLock = 1;
-  int16_t lastGyro[3];
-  int16_t lastAccel[3];
-  int16_t lastMag[3];
+  float lastGyro[3];
+  float lastAccel[3];
+  float lastMag[3];
   float lastAlt;
   unsigned int lastTime;
 
   readBuffer3(gyroReadings, lastGyro);
   readBuffer3(accelReadings, lastAccel);
   readBuffer3(magReadings, lastMag);
-  lastAlt = altReadings[bufferPosition - 1];
-  lastTime = time[bufferPosition - 1];
+  lastAlt = altReadings[bufPosition - 1];
+  lastTime = time[bufPosition - 1];
 
   //write data to SD card here
 
-  bufferPosition = 0;
-  loadBuffer3(lastGyro, gyroReadings, bufferPosition);
-  loadBuffer3(lastAccel, accelReadings, bufferPosition);
-  loadBuffer3(lastMag, magReadings, bufferPosition);
-  altReadings[bufferPosition] = lastAlt;
-  time[bufferPosition] = lastTime;
+  bufPosition = 0;
+  loadBuffer3(lastGyro, gyroReadings, bufPosition);
+  loadBuffer3(lastAccel, accelReadings, bufPosition);
+  loadBuffer3(lastMag, magReadings, bufPosition);
+  altReadings[bufPosition] = lastAlt;
+  time[bufPosition] = lastTime;
 
-  bufferPosition++;
+  bufPosition++;
   bufferLock = 0;
   return 0;
 }
 
-void DataCollection::readBuffer3(int16_t *buf[][3], int16_t *data[]) {
-  data[0] = buf[bufferPosition - 1][0];
-  data[1] = buf[bufferPosition - 1][1];
-  data[2] = buf[bufferPosition - 1][2];
+void DataCollection::readBuffer3(float buf[][3], float data[]) {
+  data[0] = buf[bufPosition - 1][0];
+  data[1] = buf[bufPosition - 1][1];
+  data[2] = buf[bufPosition - 1][2];
 }
 
-void DataCollection::loadBuffer3(int16_t *data[], int16_t *buf[][3], int pos) {
+void DataCollection::loadBuffer3(float data[], float buf[][3], int pos) {
   buf[pos][0] = data[0];
   buf[pos][1] = data[1];
   buf[pos][2] = data[2];
@@ -179,7 +204,7 @@ void DataCollection::average3(float data[][3], int length, float avg[]) {
 }
 
 float DataCollection::average(float data[], int length) {
-  float avg;
+  float avg = 0;;
   for(int x = 0; x < length; x++) {
     avg += data[x];
   }
@@ -187,10 +212,6 @@ float DataCollection::average(float data[], int length) {
   return avg/length;
 }
 
-int DataCollection::verifySensor(MPL mpl) {
-  mpl.
-}
-
-int DataCollection::verifySensor(MPU mpu) {
-
+void DataCollection::debug(String msg) {
+  Serial.println(msg);
 }

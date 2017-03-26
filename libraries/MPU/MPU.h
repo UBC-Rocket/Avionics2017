@@ -2,6 +2,7 @@
 #define MPU_H
 
 #include <inttypes.h>
+#include <Arduino.h>
 
 typedef short int16_t;
 
