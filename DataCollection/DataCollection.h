@@ -4,10 +4,10 @@
 
 
 #include "MPL.h"
-//#include "MPU.h"
-//#include <i2c_t3.h>
+#include "MPU.h"
 #include <inttypes.h>
 #include <stdio.h>
+#include <Arduino.h>
 
 #define BUFFER_SIZE 500
 
@@ -17,32 +17,39 @@
 typedef short int16_t;
 
 class DataCollection {
-  MPU mpu();
-  MPL mpl();
+  MPU *mpus[5];
+  int mpuError[5];
+  MPL *mpls[5];
+  int mplError[5];
+  int MPULength, MPLLength;
 
   int bufPosition;
-  int16_t gyroReadings[BUFFER_SIZE][3];
-	int16_t accelReadings[BUFFER_SIZE][3];
-	int16_t magReadings[BUFFER_SIZE][3];
+  float gyroReadings[BUFFER_SIZE][3];
+	float accelReadings[BUFFER_SIZE][3];
+	float magReadings[BUFFER_SIZE][3];
 	float altReadings[BUFFER_SIZE];
   unsigned long time[BUFFER_SIZE];
   bool bufferLock;
 
 public:
-	float kalmanError;
-	float predictionError = 1;
 
-  int collectAndFilter();
-  int popGyro(int16_t* gyro);
-  int popAccel(int16_t* accel);
-  int popMag(int16_t* mag);
-  float popAlt();
+  int begin(MPU *mpu[], int MPUlen, MPL *mpl[], int MPLlen);
+  int filterData();
+  int popGyro(float gyro[]);
+  int popAccel(float accel[]);
+  int popMag(float mag[]);
+  int popAlt(float *alt);
 
-	int filterData();
 	int collect();
   int writeData();
 
 private:
-  int loadBuffer3(int16_t data[], int16_t buf[][3]);
+  void readBuffer3(float buf[][3], float data[]);
+  void loadBuffer3(float data[], float buf[][3], int pos);
+
+  void average3(float data[][3], int length, float avg[]);
+  float average(float data[], int length);
+
+  void debug(String msg);
 };
 #endif

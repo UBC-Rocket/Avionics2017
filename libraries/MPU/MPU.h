@@ -2,6 +2,7 @@
 #define MPU_H
 
 #include <inttypes.h>
+#include <Arduino.h>
 
 typedef short int16_t;
 
@@ -21,8 +22,9 @@ public:
   int readAccel(int16_t *data);
   int readMag(int16_t *data);
 
-  int readGyro(float *data);
-  int readAccel(float *data);
+  int readGyro(float data[]);
+  int readAccel(float data[]);
+  int readMag(float data[]);
 
   int readDMP(long quat[]);
   int loadDMP();
