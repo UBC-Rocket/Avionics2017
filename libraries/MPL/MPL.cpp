@@ -36,7 +36,7 @@ int MPL::begin(bool whichWire) {
     Wire.setDefaultTimeout(WIRE_TIMEOUT);
   }
 
-  writeByte(CTRL1_REG, REG_INIT); //initialize
+  write(CTRL1_REG, REG_INIT); //initialize
   num_samples_avg = NUM_SAMPLES_AVG;
 
   groundLevel = 0;
@@ -55,6 +55,7 @@ int MPL::selfTest() {
 
     Wire.setDefaultTimeout(WIRE_TIMEOUT);
   }
+  return 0; //NOT FLIGHT CODE THIS SHOULD DO SOMETHING!-------------------------------------------------------------------------
 }
 
 /*
@@ -63,12 +64,14 @@ Set the ground level to be subtracted off the real altitude measurement
 void MPL::setGround() {
   debug("in setGround");
   groundLevel = 0.0;
-  int readings = 100; //might want to think about the optimal number for this
-  float finding_gnd = 0;
-
+  int readings = 100; //might want to think about the optimal number for this-----------------------------------
+ 
+  delay(500);
   for(int x = 0; x < readings; x++) {
-    delay (50);
-    groundLevel += readAlt();
+    delay (100);
+	float groundGeuss = 0;
+    readAlt(&groundGeuss);
+	groundLevel += groundGeuss;
     debug(x);
     debug(groundLevel);
   }
@@ -79,8 +82,8 @@ void MPL::setGround() {
 Reads the current altitude in meters and return that value minus the gound level offset if it has been set.
 */
 int MPL::readAGL(float *data) {
-  int err = readAlt(&data);
-  data -= groundLevel;
+  int err = readAlt(data);
+  *data -= groundLevel;
   return err;
 }
 
@@ -88,13 +91,13 @@ int MPL::readAlt(float *data) {
   int err;
   uint8_t buffer[3];
 
-  if(err = writeByte(CTRL1_REG, REG_INIT+2)) return err; //This forces the chip to make a reading
-  if(err = writeByte(CTRL1_REG, REG_INIT)) return err; //OST bit set to 1
+  if(err = write(CTRL1_REG, REG_INIT+2)) return err; //This forces the chip to make a reading
+  if(err = write(CTRL1_REG, REG_INIT)) return err; //OST bit set to 1
 
   if(err = read(ALT_REG, 3, buffer)) return err;
 
-  data = (float)((buffer[0]<<8) | buffer[1]); //The high byte of the altitude
-  data += (float)(buffer[2] >> 4) / 16.0; //The fractional component of the altitude
+  *data = (float)((buffer[0]<<8) | buffer[1]); //The high byte of the altitude
+  *data += (float)(buffer[2] >> 4) / 16.0; //The fractional component of the altitude
 
   return 0;
 }
@@ -108,51 +111,52 @@ int MPL::readTemp(float *data) {
 
   if(err = read(TEMP_REG, 2, buffer)) return err; //read temperature register
 
-  data = buffer[0];//  Upper 8 bits of the temperature, representing the numbers before the decimal
-  data += float(buffer[1] >> 4) / 16.0;//  Lower 4 bits of the temperature, representing the numbers
+  *data = buffer[0];//  Upper 8 bits of the temperature, representing the numbers before the decimal
+  *data += float(buffer[1] >> 4) / 16.0;//  Lower 4 bits of the temperature, representing the numbers
 
   return 0;
 }
 
-int MPU::write(uint8_t reg, uint8_t data) {
+int MPL::write(uint8_t reg, uint8_t data) {
   return write(reg, 1, &data);
 }
 
-int MPU::write(uint8_t reg, uint8_t length, uint8_t *data) {
+int MPL::write(uint8_t reg, uint8_t length, uint8_t *data) {
   if(!data) return -1;
 
   if(wire) {
-    Wire1.beginTransmission(addr);
+    Wire1.beginTransmission(ADDRESS);
     if(Wire1.write(reg) != 1) return -1;
     if(Wire1.write(data, length) != length) return -2;
     return Wire1.endTransmission(true);
   } else {
-    Wire.beginTransmission(addr);
+    Wire.beginTransmission(ADDRESS);
     if(Wire.write(reg) != 1) return -1;
     if(Wire.write(data, length) != length) return -2;
     return Wire.endTransmission(true);
   }
+  return 50; //NOT FLIGHT CODE THIS ERROR CODE SHOULD BE DEFINED!
 }
 
-int MPU::read(uint8_t reg, uint8_t length, uint8_t *data) {
+int MPL::read(uint8_t reg, uint8_t length, uint8_t *data) {
   if(!data) return -1;
 
   if(wire) {
-    Wire1.beginTransmission(addr);
+    Wire1.beginTransmission(ADDRESS);//NOT THE RIGHT ADDRESS
     Wire1.write(reg);
     Wire1.endTransmission(false);
 
-    Wire1.requestFrom(addr, length, false);
+    Wire1.requestFrom(ADDRESS, length, false);
     for(int i = 0; i < length; i++) {
       data[i] = Wire1.read();
     }
     return Wire1.endTransmission(true);
   } else {
-    Wire.beginTransmission(addr);
+    Wire.beginTransmission(ADDRESS);
     Wire.write(reg);
     Wire.endTransmission(false);
 
-    Wire.requestFrom(addr, length, false);
+    Wire.requestFrom(ADDRESS, length, false);
     for(int i = 0; i < length; i++) {
       data[i] = Wire.read();
     }
