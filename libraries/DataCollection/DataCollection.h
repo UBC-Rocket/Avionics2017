@@ -150,8 +150,6 @@ class DataCollection {
 	float alt1RAW[BUFFER_SIZE];
 	float alt1FILTER[BUFFER_SIZE];
 
-	
-
 	//ATL2
 
 	MPL* PSensor2;
@@ -162,23 +160,7 @@ class DataCollection {
 	float alt2RAW[BUFFER_SIZE];
 	float alt2FILTER[BUFFER_SIZE];
 
-
-
-
-
-
-
-
-
-
 public:
-
-
-
-
-
-
-
 
 	float timeDelta;
 	//these are the filtered values i.e. best guess
@@ -195,22 +177,13 @@ public:
 	//filtered data from the syste	
 	int16_t  previousAcceleration[3];
 
-
-
-
-
-
- DataCollection();
+	DataCollection();
 	int update();
 	int writeToSD();
 	int getBufferSize();
 	void filterALT1();
 
-
-
 private:
-
-
 
 };
 #endif

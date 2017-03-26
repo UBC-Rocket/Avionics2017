@@ -23,11 +23,14 @@
 #define FINAL_DESCENT   8
 #define LANDED          9
 
+#define NUM_CHECKS      4               //each condition has to pass 5 times 
+
 /*
  * Ignition Circuit Definitions
  */
 const int DROGUE_IGNITION_CIRCUIT = 7;  //pin to drogue chute ignition circuit
 const int PAYLOAD_IGNITION_CIRCUIT = 8; //pin to nose cone ignition circuit
+const int MAIN_IGNITION_CIRCUIT = 9;
 
 Rocket rocket(STANDBY, STANDBY);
 DataCollection* dataCollector;
@@ -37,12 +40,15 @@ int launch_count = 0;
 int burnout_count = 0;
 int coasting_count = 0;
 int test_apogee_count = 0;
+int temp_apogee_count = 0;
+int test_apogee_failed = 0;
 int detect_main_alt_count = 0;
-int final_descent_count = 0;
+int landed_count = 0;
 
 //time variables
-unsigned long launch_time;
 unsigned long curr_time;
+unsigned long launch_time;
+unsigned long deploy_drogue_time;
 
 //temp for printing and TESTING
 float curr_altitude;
@@ -58,8 +64,11 @@ void setup() {
   //Initialize pins for ignition circuits as outputs
   pinMode(DROGUE_IGNITION_CIRCUIT, OUTPUT);
   pinMode(PAYLOAD_IGNITION_CIRCUIT, OUTPUT);
+  pinMode(MAIN_IGNITION_CIRCUIT, OUTPUT);
   
   dataCollector = new DataCollection();
+
+  //do we wanna turn on an LED to confirm that we're all initialized?
 }
 
 /*
@@ -92,62 +101,83 @@ void loop(){
   switch (rocket.currentState){
       
     case STANDBY:
-      if (rocket.detect_launch(curr_Acc[2], launch_count)){
+      if ((rocket.detect_launch(curr_Acc[2], launch_count)) > NUM_CHECKS){
         rocket.nextState = POWERED_ASCENT;
         launch_time = millis();
       }
       break;
       
     case POWERED_ASCENT:
-      rocket.detect_burnout(curr_Acc[2], prev_Acc[2], burnout_count, launch_time, curr_time);
-      rocket.nextState = COASTING;
+      if ( rocket.detect_burnout(curr_Acc[2], burnout_count) > NUM_CHECKS ){
+        rocket.nextState = COASTING;
+      }
+      else if (curr_time > (launch_time + 4500)){
+        rocket.nextState = COASTING;
+      }
       break;
       
     case COASTING:
-      rocket.coasting(curr_Acc[2], coasting_count);
-      rocket.nextState = TEST_APOGEE;
+      if( rocket.coasting(curr_Acc[2], coasting_count) > NUM_CHECKS ){
+        rocket.nextState = TEST_APOGEE;
+      }
+    
       break;
       
     case TEST_APOGEE:
-      if (rocket.test_apogee(curr_altitude, prev_altitude, test_apogee_count)){
+      temp_apogee_count = test_apogee_count;
+      test_apogee_count = rocket.test_apogee(curr_altitude, prev_altitude, test_apogee_count);
+      
+      if ( test_apogee_count > NUM_CHECKS ){
         rocket.nextState = DEPLOY_DROGUE;
+        test_apogee_failed = 0;
       }
-      else{
-        rocket.nextState = TEST_APOGEE;
+      //this is gross and im embarassed - will fix this shit
+      else if (test_apogee_count == temp_apogee_count){
+        test_apogee_failed++;
       }
+
+      if (test_apogee_failed > NUM_CHECKS){
+        rocket.nextState = COASTING;
+      }
+      
       break;
       
     case DEPLOY_DROGUE:
+      deploy_drogue_time = millis();
       digitalWrite(DROGUE_IGNITION_CIRCUIT, HIGH); //send logic 1 to ignition circuit
-      rocket.deploy_drogue();
+      //TODO: pop in "delay" to keep signal on for 2 seconds
       rocket.nextState = DEPLOY_PAYLOAD;
       break;
       
     case DEPLOY_PAYLOAD:
-      digitalWrite(PAYLOAD_IGNITION_CIRCUIT, HIGH); //send logic 1 to ignition circuit
-      rocket.deploy_payload();
-      rocket.nextState = INITIAL_DESCENT;
+      if (curr_time > deploy_drogue_time + 3000){
+        digitalWrite(PAYLOAD_IGNITION_CIRCUIT, HIGH); //send logic 1 to ignition circuit
+        //TODO: pop in "delay" to keep signal on for 2 seconds
+        rocket.nextState = INITIAL_DESCENT;
+      }
+      
       break;
       
     case INITIAL_DESCENT:
-      if(rocket.detect_main_alt(curr_altitude, detect_main_alt_count)){
+      if( rocket.detect_main_alt(curr_altitude, detect_main_alt_count) > NUM_CHECKS ){
         rocket.nextState = DEPLOY_MAIN;
       }
       break;
       
     case DEPLOY_MAIN:
-      rocket.deploy_main();
+      digitalWrite(MAIN_IGNITION_CIRCUIT, HIGH); 
+      //TODO: pop in "delay" to keep signal on TIRTH seconds
       rocket.nextState = FINAL_DESCENT;
       break;
       
     case FINAL_DESCENT:
-      if (rocket.final_descent(curr_altitude, prev_altitude, curr_Acc[2], prev_Acc[2], final_descent_count)) //returns true when we've landed
+      if (rocket.final_descent(curr_altitude, prev_altitude, curr_Acc[2], prev_Acc[2], landed_count) > NUM_CHECKS ) //returns true when we've landed
         rocket.nextState = LANDED;
-      else
-        rocket.nextState = FINAL_DESCENT;
+
       break;
 
     case LANDED:
+      //do something better when SD card is good to go
       rocket.flight_complete();
       break;
       
