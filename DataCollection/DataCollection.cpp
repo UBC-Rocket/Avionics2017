@@ -1,8 +1,13 @@
-#include DataCollection.h
+#include "DataCollection.h"
+
+int DataCollection::begin(MPU mpu[], MPL mpl[]) {
+  mpus = mpu;
+  mpls = mpl;
+}
 
 int DataCollection::filterData();
 
-int DataCollection::popGyro(int16_t* gyro) {
+int DataCollection::popGyro(float gyro[]) {
   if(bufferPosition < 1) return -1;
   readBuffer3(gyroReadings, gyro);
   return 0;
@@ -14,7 +19,7 @@ int DataCollection::popGyro(int16_t* gyro) {
  * \return Returns 0 on success or -1 if buffer is empty
  */
 
-int DataCollection::popAccel(int16_t* accel) {
+int DataCollection::popAccel(float accel[]) {
   if(bufferPosition < 1) return -1;
   readBuffer3(accelReadings, accel);
   return 0;
@@ -26,7 +31,7 @@ int DataCollection::popAccel(int16_t* accel) {
  * \return Returns 0 on success or -1 if buffer is empty
  */
 
-int DataCollection::popMag(int16_t* mag) {
+int DataCollection::popMag(float mag[]) {
   if(bufferPosition < 1) return -1;
   readBuffer3(magReadings, mag);
   return 0;
@@ -34,10 +39,11 @@ int DataCollection::popMag(int16_t* mag) {
 
 /**
  * Get most recent altitude reading.
+ * \param alt a float to be filled with last altitude
  * \return Returns most recent altitude reading or -1 if the buffer is empty
  */
 
-float DataCollection::popAlt() {
+int DataCollection::popAlt(float *alt) {
   if(bufferPosition < 1) return -1;
   return altReadings[bufferPosition - 1];
 }
@@ -54,18 +60,61 @@ int DataCollection::collect() {
   bufferLock = 1;
 
   time[bufferPosition] = micros();
+  int droppedReadings; //number of sensor readings ignored due to communication issues
 
-  int16_t tmp[3];
-  mpu.readGyro(tmp);
-  loadBuffer3(tmp, gyroReadings);
+  //Buffers for one timestep of readings from all sensors.
+  float gyros[MPULength][3];
+  float accels[MPULength][3];
+  float mags[MPULength][3];
+  float alts[MPLLength];
 
-  mpu.readAccel(tmp);
-  loadBuffer3(tmp, accelReadings);
+  dropperReadings = 0;
+  for(int x = 0; x < MPULength; x++) {
+    if(mpuError[x]) {
+      droppedReadings++;
+      continue;
+    }
 
-  mpu.readMag(tmp);
-  loadBuffer3(tmp, magReadings);
+    MPU mpu = mpus[x];
 
-  alt[bufferPosition] = mpl.getAGL();
+    float tmp[3];
+    mpuError[x] = mpuError[x] ? mpuError[x] : mpu.readGyro(tmp);
+    loadBuffer3(tmp, gyro, x-droppedReadings);
+
+    mpuError[x] = mpuError[x] ? mpuError[x] : mpu.readAccel(tmp);
+    loadBuffer3(tmp, accel, x-droppedReadings);
+
+    mpuError[x] = mpuError[x] ? mpuError[x] : mpu.readMag(tmp);
+    loadBuffer3(tmp, mag, x-droppedReadings);
+  }
+
+  float tmp[3];
+
+  //average each set of data from MPU and load in to buffer
+  average3(gyros, MPULength - droppedReadings, tmp);
+  loadBuffer3(tmp, gyroReadings, bufferPosition);
+
+  average3(gyros, MPULength - droppedReadings, tmp);
+  loadBuffer3(tmp, accelReadings, bufferPosition);
+
+  average3(gyros, MPULength - droppedReadings, tmp);
+  loadBuffer3(tmp, magReadings, bufferPosition);
+
+  droppedReadings = 0;
+  for(int x = 0; x < MPLLength; x++) {
+    if(mplError[x]) {
+      droppedReadings++;
+      continue;
+    }
+
+    MPL mpl = mpls[x];
+
+    float alt;
+    mplError[x] = mplError[x] ? mplError[x] : mpl.readAGL(&alt);
+    alts[x - droppedReadings] = alt;
+  }
+
+  alt[bufferPosition] = average(alts, MPLLength - droppedReadings);
 
   bufferPosition++;
   bufferLock = 0;
@@ -94,9 +143,9 @@ int DataCollection::writeData() {
   //write data to SD card here
 
   bufferPosition = 0;
-  loadBuffer3(lastGyro, gyroReadings);
-  loadBuffer3(lastAccel, accelReadings);
-  loadBuffer3(lastMag, magReadings);
+  loadBuffer3(lastGyro, gyroReadings, bufferPosition);
+  loadBuffer3(lastAccel, accelReadings, bufferPosition);
+  loadBuffer3(lastMag, magReadings, bufferPosition);
   altReadings[bufferPosition] = lastAlt;
   time[bufferPosition] = lastTime;
 
@@ -105,16 +154,37 @@ int DataCollection::writeData() {
   return 0;
 }
 
-int DataCollection::readBuffer3(int16_t* buf[][3], int16_t* data[]) {
+void DataCollection::readBuffer3(int16_t *buf[][3], int16_t *data[]) {
   data[0] = buf[bufferPosition - 1][0];
   data[1] = buf[bufferPosition - 1][1];
   data[2] = buf[bufferPosition - 1][2];
 }
 
-int DataCollection::loadBuffer3(int16_t* data[], int16_t* buf[][3]) {
-  buf[bufferPosition][0] = data[0];
-  buf[bufferPosition][1] = data[1];
-  buf[bufferPosition][2] = data[2];
+void DataCollection::loadBuffer3(int16_t *data[], int16_t *buf[][3], int pos) {
+  buf[pos][0] = data[0];
+  buf[pos][1] = data[1];
+  buf[pos][2] = data[2];
+}
+
+void DataCollection::average3(float data[][3], int length, float avg[]) {
+  for(int x = 0; x < length; x++) {
+    avg[0] += data[x][0];
+    avg[1] += data[x][1];
+    avg[2] += data[x][2];
+  }
+
+  avg[0] /= length;
+  avg[1] /= length;
+  avg[2] /= length;
+}
+
+float DataCollection::average(float data[], int length) {
+  float avg;
+  for(int x = 0; x < length; x++) {
+    avg += data[x];
+  }
+
+  return avg/length;
 }
 
 int DataCollection::verifySensor(MPL mpl) {

@@ -363,7 +363,7 @@ int MPU::readMag(int16_t *data) {
   return 0;
 }
 
-int MPU::readGyro(float *data) {
+int MPU::readGyro(float data[]) {
   int16_t rawData[3];
   int err;
   if(err = readGyro(rawData)) return err;
@@ -374,13 +374,24 @@ int MPU::readGyro(float *data) {
   return 0;
 }
 
-int MPU::readAccel(float *data) {
+int MPU::readAccel(float data[]) {
   int16_t rawData[3];
   int err;
   if(err = readAccel(rawData)) return err;
 
   for (int x = 0; x < 3; x++) {
     data[x] = rawData[x] * accelFS / INT16_MAX;
+  }
+  return 0;
+}
+
+int MPU::readMag(float data[]) {
+  int16_t rawData[3];
+  int err;
+  if(err = readMag(rawData)) return err;
+
+  for (int x = 0; x < 3; x++) {
+    data[x] = (float)rawData[x];
   }
   return 0;
 }
