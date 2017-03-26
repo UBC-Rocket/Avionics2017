@@ -12,18 +12,24 @@
 /*
  * State Definitions
  */
-#define STANDBY         0
-#define POWERED_ASCENT  1
-#define COASTING        2
-#define TEST_APOGEE     3
-#define DEPLOY_DROGUE   4
-#define DEPLOY_PAYLOAD  5
-#define INITIAL_DESCENT 6
-#define DEPLOY_MAIN     7
-#define FINAL_DESCENT   8
-#define LANDED          9
+#define STANDBY           0
+#define POWERED_ASCENT    1
+#define COASTING          2
+#define TEST_APOGEE       3
+#define DEPLOY_DROGUE     4
+#define DEPLOY_PAYLOAD    5
+#define INITIAL_DESCENT   6
+#define DEPLOY_MAIN       7
+#define FINAL_DESCENT     8
+#define LANDED            9
 
-#define NUM_CHECKS      4               //each condition has to pass 5 times 
+#define NUM_CHECKS        4     //each condition has to pass 5 times 
+
+#define BURNOUT_TIME      4500
+#define DROGUE_SIG_TIME   3000
+#define PAYLOAD_SIG_TIME  3000
+#define MAIN_SIG_TIME     5000  // TIRTH SECONDS
+#define PRED_APOGEE_TIME  28000 //whatever time we think apogee will be at
 
 /*
  * Ignition Circuit Definitions
@@ -46,9 +52,11 @@ int detect_main_alt_count = 0;
 int landed_count = 0;
 
 //time variables
-unsigned long curr_time;
-unsigned long launch_time;
-unsigned long deploy_drogue_time;
+unsigned long curr_time = 0;
+unsigned long launch_time = 0;
+unsigned long deploy_drogue_time = 0;
+unsigned long deploy_payload_time = 0;
+unsigned long deploy_main_time = 0;
 
 //temp for printing and TESTING
 float curr_altitude;
@@ -79,13 +87,18 @@ void setup() {
 void loop(){
   //Update The Data, Get next Best Guess at ALT ACC and VELO------------------
   dataCollector->update();
-  
+
+  curr_time = millis();
+
   //make sure ignition pins stay low!
-  digitalWrite(DROGUE_IGNITION_CIRCUIT, LOW);
-  digitalWrite(PAYLOAD_IGNITION_CIRCUIT, LOW);
+  if ( (deploy_drogue_time == 0) || (curr_time > deploy_drogue_time + DROGUE_SIG_TIME) )
+    digitalWrite(DROGUE_IGNITION_CIRCUIT, LOW);
+  if ( (deploy_payload_time == 0) || (curr_time > deploy_drogue_time + PAYLOAD_SIG_TIME) )
+    digitalWrite(PAYLOAD_IGNITION_CIRCUIT, LOW);
+  if ( (deploy_main_time == 0) || (curr_time > deploy_main_time + MAIN_SIG_TIME) )
+    digitalWrite(MAIN_IGNITION_CIRCUIT, LOW);
 
   //PRINT THE DATA THIS IS FOR TESTING ONLY!
-  curr_time = millis();
   Serial.println("Current time: " + (String)curr_time);
 
   curr_altitude = dataCollector->currentALTITUDE;
@@ -96,6 +109,9 @@ void loop(){
   curr_Acc[2] = dataCollector->currentAcceleration[2];
   //TODO: sqrt squared of these values??
   Serial.println("Current Acceleration X: " + (String)curr_Acc[0] + " Y: "+(String)curr_Acc[1] + " Z: " +(String)curr_Acc[2]);
+
+  //update the current time one last time
+  curr_time = millis();
 
   //MAKE A STATE CHANGE----------------------------------------
   switch (rocket.currentState){
@@ -111,13 +127,16 @@ void loop(){
       if ( rocket.detect_burnout(curr_Acc[2], burnout_count) > NUM_CHECKS ){
         rocket.nextState = COASTING;
       }
-      else if (curr_time > (launch_time + 4500)){
+      else if (curr_time > (launch_time + BURNOUT_TIME)){
         rocket.nextState = COASTING;
       }
       break;
       
     case COASTING:
       if( rocket.coasting(curr_Acc[2], coasting_count) > NUM_CHECKS ){
+        rocket.nextState = TEST_APOGEE;
+      }
+      else if ((curr_time > launch_time + PRED_APOGEE_TIME) ){//TODO: make this agree with an altitude
         rocket.nextState = TEST_APOGEE;
       }
     
@@ -135,6 +154,9 @@ void loop(){
       else if (test_apogee_count == temp_apogee_count){
         test_apogee_failed++;
       }
+      else if (curr_time > launch_time + PRED_APOGEE_TIME){//TODO: make this agree with an altitude
+        rocket.nextState = DEPLOY_DROGUE;
+      }
 
       if (test_apogee_failed > NUM_CHECKS){
         rocket.nextState = COASTING;
@@ -151,8 +173,8 @@ void loop(){
       
     case DEPLOY_PAYLOAD:
       if (curr_time > deploy_drogue_time + 3000){
+        deploy_payload_time = millis();
         digitalWrite(PAYLOAD_IGNITION_CIRCUIT, HIGH); //send logic 1 to ignition circuit
-        //TODO: pop in "delay" to keep signal on for 2 seconds
         rocket.nextState = INITIAL_DESCENT;
       }
       
@@ -166,7 +188,6 @@ void loop(){
       
     case DEPLOY_MAIN:
       digitalWrite(MAIN_IGNITION_CIRCUIT, HIGH); 
-      //TODO: pop in "delay" to keep signal on TIRTH seconds
       rocket.nextState = FINAL_DESCENT;
       break;
       
