@@ -18,21 +18,23 @@ class MPL {
 public:
   int begin(bool whichWire);
 
+  int selfTest();
+
   // Initialization functions
   void setGround();
 
   // Read data functions
-  float readAGL();
-  float readAlt();
+  int readAGL(float *data);
+  int readAlt(float *data);
 
-  float readTemp();
+  int readTemp(float *data);
 private:
   void debug(String msg);
 
   // Writes a given byte to a given register
-  uint8_t writeByte(byte regAddr, byte value);
-  int readBytes(uint8_t reg, uint8_t length, uint8_t* data);
-  uint8_t readByte(uint8_t reg);
+  int write(uint8_t reg, uint8_t data);
+  int write(uint8_t reg, uint8_t length, uint8_t *data);
+  int read(uint8_t reg, uint8_t length, uint8_t *data);
 };
 
 #endif

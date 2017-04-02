@@ -2,9 +2,12 @@
 #include <i2c_t3.h>
 
 #define CTRL1_REG 0x26
+#define TEMP_REG 0x04
+#define ALT_REG 0x01
 #define ADDRESS 0x60		// Sensor I2C address
 
 #define NUM_SAMPLES_AVG 100 // Number of samples we want to average
+#define WIRE_TIMEOUT 1000
 
 //Do we still need these?
 //#define PWR_MNG 0x6B //register address of pwr management
@@ -26,11 +29,11 @@ int MPL::begin(bool whichWire) {
 
   if(wire) {
      Wire1.begin();
-     Wire1.setDefaultTimeout(2500);
+     Wire1.setDefaultTimeout(WIRE_TIMEOUT);
   }
   else {
     Wire.begin();
-    Wire.setDefaultTimeout(2500);
+    Wire.setDefaultTimeout(WIRE_TIMEOUT);
   }
 
   writeByte(CTRL1_REG, REG_INIT); //initialize
@@ -39,6 +42,19 @@ int MPL::begin(bool whichWire) {
   groundLevel = 0;
 
   return 0;
+}
+
+int MPL::selfTest() {
+  if(wire) {
+    Wire1.setDefaultTimeout(100);
+
+    Wire1.setDefaultTimeout(WIRE_TIMEOUT);
+
+  } else {
+    Wire.setDefaultTimeout(100);
+
+    Wire.setDefaultTimeout(WIRE_TIMEOUT);
+  }
 }
 
 /*
@@ -62,99 +78,91 @@ void MPL::setGround() {
 /*
 Reads the current altitude in meters and return that value minus the gound level offset if it has been set.
 */
-float MPL::readAGL() {
-  return readAlt() - groundLevel;
+int MPL::readAGL(float *data) {
+  int err = readAlt(&data);
+  data -= groundLevel;
+  return err;
 }
 
-float MPL::readAlt() {
-  //The following will force a read:
-  writeByte(CTRL1_REG, REG_INIT+2); //This forces the chip to make a reading
-  writeByte(CTRL1_REG, REG_INIT); //OST bit set to 1
+int MPL::readAlt(float *data) {
+  int err;
+  uint8_t buffer[3];
 
-  uint8_t altH, altL;
-  float altF;
+  if(err = writeByte(CTRL1_REG, REG_INIT+2)) return err; //This forces the chip to make a reading
+  if(err = writeByte(CTRL1_REG, REG_INIT)) return err; //OST bit set to 1
 
-  uint8_t buffer[3] = {0};
+  if(err = read(ALT_REG, 3, buffer)) return err;
 
-  readBytes(0x01, 3, buffer);
+  data = (float)((buffer[0]<<8) | buffer[1]); //The high byte of the altitude
+  data += (float)(buffer[2] >> 4) / 16.0; //The fractional component of the altitude
 
-  altH = buffer[0]; //The high byte of the altitude
-  altL = buffer[1];//  The low byte of the altitude
-  altF = float(buffer[2] >> 4) / 16.0; //The fractional component of the altitude
-
-  return ((altH << 8) | altL) + altF;
+  return 0;
 }
 
 /*
 returns the temperature in degrees Celsius
 */
-float MPL::readTemp() {
-  int8_t tempH;
-  float tempF;
+int MPL::readTemp(float *data) {
+  int err;
   uint8_t buffer[2];
-  readBytes(0x04, 2, buffer); //read temperature register
 
-  tempH = buffer[0];//  Upper 8 bits of the temperature, representing the numbers before the decimal
-  tempF = float(buffer[1] >> 4) / 16.0;//  Lower 4 bits of the temperature, representing the numbers
+  if(err = read(TEMP_REG, 2, buffer)) return err; //read temperature register
 
-  return tempH + tempF;
+  data = buffer[0];//  Upper 8 bits of the temperature, representing the numbers before the decimal
+  data += float(buffer[1] >> 4) / 16.0;//  Lower 4 bits of the temperature, representing the numbers
+
+  return 0;
 }
 
-//  Writes a byte of data to the sensor at the given address WORKS
-uint8_t MPL::writeByte(byte regAddr, byte value) {
-  if(!wire) {
-    Wire.beginTransmission(ADDRESS);
-    Wire.write(regAddr);//load target reg
-    Wire.write(value); //load value into target reg
-
-    return Wire.endTransmission(true);
-  } else {
-    Wire1.beginTransmission(ADDRESS);
-    Wire1.write(regAddr);
-    Wire1.write(value);
-
-    return Wire1.endTransmission(true);
-  }
+int MPU::write(uint8_t reg, uint8_t data) {
+  return write(reg, 1, &data);
 }
 
-//  read "length" bytes starting at a given address and loads the values into the given array pointer
-int MPL::readBytes(byte regAddr, uint8_t length, uint8_t *data){
+int MPU::write(uint8_t reg, uint8_t length, uint8_t *data) {
   if(!data) return -1;
 
   if(wire) {
-    Wire1.beginTransmission(ADDRESS);
-    Wire1.write(regAddr);
-    Wire1.endTransmission(false);// or I2C_NOSTOP?
-    Wire1.requestFrom(ADDRESS, length); // Request the data...
-
-    for (int i = 0; i < length; i++) {
-      data[i] = Wire1.read();
-    }
-
+    Wire1.beginTransmission(addr);
+    if(Wire1.write(reg) != 1) return -1;
+    if(Wire1.write(data, length) != length) return -2;
     return Wire1.endTransmission(true);
   } else {
-    Wire.beginTransmission(ADDRESS);
-    Wire.write(regAddr);
-    Wire.endTransmission(false);// or I2C_NOSTOP?
-    Wire.requestFrom(ADDRESS, length); // Request the data...
-
-    for (int i = 0; i < length; i++) {
-      data[i] = Wire.read();
-    }
-
+    Wire.beginTransmission(addr);
+    if(Wire.write(reg) != 1) return -1;
+    if(Wire.write(data, length) != length) return -2;
     return Wire.endTransmission(true);
   }
 }
 
-//read ONE byte from the given reg and returns the unsigned value
-  uint8_t MPL::readByte(uint8_t reg) {
-    uint8_t data;
-    readBytes(reg, 1, &data);
-    return data;
+int MPU::read(uint8_t reg, uint8_t length, uint8_t *data) {
+  if(!data) return -1;
+
+  if(wire) {
+    Wire1.beginTransmission(addr);
+    Wire1.write(reg);
+    Wire1.endTransmission(false);
+
+    Wire1.requestFrom(addr, length, false);
+    for(int i = 0; i < length; i++) {
+      data[i] = Wire1.read();
+    }
+    return Wire1.endTransmission(true);
+  } else {
+    Wire.beginTransmission(addr);
+    Wire.write(reg);
+    Wire.endTransmission(false);
+
+    Wire.requestFrom(addr, length, false);
+    for(int i = 0; i < length; i++) {
+      data[i] = Wire.read();
+    }
+    return Wire.endTransmission(true);
   }
+}
   /*
   serial prints a given string message
   */
-  void MPL::debug(String msg){
-    Serial.println(msg);
-  }
+void MPL::debug(String msg){
+  Serial.println(msg);
+}
+

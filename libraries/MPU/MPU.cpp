@@ -1,6 +1,9 @@
 #include "MPU.h"
 #include <i2c_t3.h>
 
+#define INT16_MAX 0x7fff
+#define WIRE_TIMEOUT 2500
+
 #define PWR_MNG 0x6B //register address of pwr management
 #define USR_CNTRL 0x6A //register address of user control
 #define CONFIG 0x20 //register address of configuration
@@ -248,18 +251,16 @@ static uint8_t dmp_memory[DMP_CODE_SIZE] = {
 
 int MPU::begin(bool whichWire, uint8_t Addr) {
   int err;
-  debug("Initializing library");
   wire = whichWire;
   addr = Addr;
-
   debug("Initializing TWI");
 
   if(wire) {
     Wire1.begin();
-    Wire1.setDefaultTimeout(2500);
+    Wire1.setDefaultTimeout(WIRE_TIMEOUT);
   } else {
     Wire.begin();
-    Wire.setDefaultTimeout(2500);
+    Wire.setDefaultTimeout(WIRE_TIMEOUT);
   }
 
   debug("TWI initialized");
@@ -280,9 +281,9 @@ int MPU::begin(bool whichWire, uint8_t Addr) {
 
 int MPU::selfTest() {
   uint8_t test;
-  test = read(WHOAMI);
+  int err = read(WHOAMI, 1, &test);
 
-  return test;
+  return err ? err : test;
 }
 
 int MPU::initGyro(uint16_t fullScale) {
@@ -351,7 +352,7 @@ int MPU::readAccel(int16_t *data) {
   return 0;
 }
 
-int MPU::readMag(int16_t* data) {
+int MPU::readMag(int16_t *data) {
   uint8_t rawData[6];
   int err;
   if(err = read(MAG_BASE, 6, rawData)) return err;
@@ -359,6 +360,28 @@ int MPU::readMag(int16_t* data) {
   data[0] = rawData[1] | (rawData[0]<<8);
   data[1] = rawData[3] | (rawData[2]<<8);
   data[2] = rawData[5] | (rawData[4]<<8);
+  return 0;
+}
+
+int MPU::readGyro(float *data) {
+  int16_t rawData[3];
+  int err;
+  if(err = readGyro(rawData)) return err;
+
+  for (int x = 0; x < 3; x++) {
+    data[x] = rawData[x] * gyroFS / INT16_MAX;
+  }
+  return 0;
+}
+
+int MPU::readAccel(float *data) {
+  int16_t rawData[3];
+  int err;
+  if(err = readAccel(rawData)) return err;
+
+  for (int x = 0; x < 3; x++) {
+    data[x] = rawData[x] * accelFS / INT16_MAX;
+  }
   return 0;
 }
 
@@ -501,12 +524,6 @@ int MPU::write(uint8_t reg, uint8_t length, uint8_t *data) {
     if(Wire.write(data, length) != length) return -2;
     return Wire.endTransmission(true);
   }
-}
-
-uint8_t MPU::read(uint8_t reg) {
-  uint8_t data;
-  read(reg, 1, &data);
-  return data;
 }
 
 int MPU::read(uint8_t reg, uint8_t length, uint8_t *data) {
