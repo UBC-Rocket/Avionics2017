@@ -34,7 +34,7 @@ int DataCollection::update() {
 
 	//TEMP TO TEST NOT REALLY THE OPERATIONS
 	previousALTITUDE = currentALTITUDE;
-	currentALTITUDE = PSensor1->readAlt();
+	currentALTITUDE = PSensor1->readAGL();
 
 
 	//these will have to be a convertion to float later
