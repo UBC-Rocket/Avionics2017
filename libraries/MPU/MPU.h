@@ -29,7 +29,7 @@ public:
 
   int enableDMP(bool enable);
 private:
-  void debug(String msg);
+  //void debug(String msg);
   int writeMem(uint16_t addr, uint8_t length, uint8_t *data);
   int readMem(uint16_t addr, uint8_t length, uint8_t *data);
 

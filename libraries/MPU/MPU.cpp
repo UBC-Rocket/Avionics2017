@@ -1,7 +1,7 @@
 #include "MPU.h"
 #include <i2c_t3.h>
 
-#define INT16_MAX 0x7fff
+//#define INT16_MAX 0x7fff
 #define WIRE_TIMEOUT 2500
 
 #define PWR_MNG 0x6B //register address of pwr management
@@ -253,7 +253,7 @@ int MPU::begin(bool whichWire, uint8_t Addr) {
   int err;
   wire = whichWire;
   addr = Addr;
-  debug("Initializing TWI");
+  //debug("Initializing TWI");
 
   if(wire) {
     Wire1.begin();
@@ -263,18 +263,18 @@ int MPU::begin(bool whichWire, uint8_t Addr) {
     Wire.setDefaultTimeout(WIRE_TIMEOUT);
   }
 
-  debug("TWI initialized");
+  //debug("TWI initialized");
 
-  debug("Initializing Power Managament");
-  if(err = write(PWR_MNG, 0)) debug(err);
+  //debug("Initializing Power Managament");
+  //if(err = write(PWR_MNG, 0)) debug(err);
   delay(500);
-  debug("Initializing Control Register");
-  if(err = write(USR_CNTRL, 0)) debug(err);
-  debug("Initializing Configuration Register");
-  if(err = write(CONFIG, 0b1)) debug(err); //set DLPF_CFG bits to 1 for 1khz internal sampling.
-  debug("Library Initialized");
-  debug("WHOAMI (should be 0x73 = 115): ");
-  debug(selfTest());
+  //debug("Initializing Control Register");
+  //if(err = write(USR_CNTRL, 0)) debug(err);
+  //debug("Initializing Configuration Register");
+  //if(err = write(CONFIG, 0b1)) debug(err); //set DLPF_CFG bits to 1 for 1khz internal sampling.
+  //debug("Library Initialized");
+  //debug("WHOAMI (should be 0x73 = 115): ");
+  //debug(selfTest());
 
   return selfTest();
 }
@@ -393,7 +393,7 @@ int MPU::readDMP(long quat[]) {
 
   if(err = read(FIFO_COUNT, 2, tmp)) return err;
   fifoCount = (tmp[0] << 8) | tmp[1];
-  debug("Data available in FIFO: " + (String)fifoCount);
+  //debug("Data available in FIFO: " + (String)fifoCount);
   if(fifoCount == 0) return -1;
 
   if(err = read(FIFO_RW, 16, data)) return err;
@@ -415,9 +415,9 @@ int MPU::loadDMP() {
   for(int pos = 0; pos < DMP_CODE_SIZE; pos += length) {
     length = (DMP_CODE_SIZE - pos < 16) ? (DMP_CODE_SIZE - pos) : 16;
 
-    debug("About to write DMP memory");
+    //debug("About to write DMP memory");
     if(err = writeMem(pos, length, &dmp_memory[pos])) return err;
-    debug("DMP written to memory\r\n");
+    //debug("DMP written to memory\r\n");
     if(err = readMem(pos, length, chunkTest)) return err;
     for(int i = 0; i < length; i++) {
       if(chunkTest[i] != dmp_memory[pos+i]) return -1; //verify memory was written correctly
@@ -469,9 +469,9 @@ int MPU::enableDMP(bool enable) {
   return 0;
 }
 
-void MPU::debug(String msg){
+/*void MPU::debug(String msg){
   Serial.println(msg);
-}
+}*/
 
 
 int MPU::writeMem(uint16_t addr, uint8_t length, uint8_t *data) {
@@ -482,7 +482,7 @@ int MPU::writeMem(uint16_t addr, uint8_t length, uint8_t *data) {
 
   addrBytes[0] = (addr>>8);
   addrBytes[1] = (addr & 0xFF);
-  debug("DMP Write Length: " + (String)length);
+  //debug("DMP Write Length: " + (String)length);
 
   if(addrBytes[1] + length > 0x100) return -2; //do not write if it will cross bank boundaries, banks are 256 bytes long
 

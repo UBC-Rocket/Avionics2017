@@ -29,7 +29,7 @@ public:
 
   int readTemp(float *data);
 private:
-  void debug(String msg);
+  //void debug(String msg);
 
   // Writes a given byte to a given register
   int write(uint8_t reg, uint8_t data);

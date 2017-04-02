@@ -61,7 +61,7 @@ int MPL::selfTest() {
 Set the ground level to be subtracted off the real altitude measurement
 */
 void MPL::setGround() {
-  debug("in setGround");
+  //debug("in setGround");
   groundLevel = 0.0;
   int readings = 100; //might want to think about the optimal number for this
   float finding_gnd = 0;
@@ -69,8 +69,8 @@ void MPL::setGround() {
   for(int x = 0; x < readings; x++) {
     delay (50);
     groundLevel += readAlt();
-    debug(x);
-    debug(groundLevel);
+    //debug(x);
+    //debug(groundLevel);
   }
   groundLevel /= readings;
 }
@@ -162,7 +162,7 @@ int MPU::read(uint8_t reg, uint8_t length, uint8_t *data) {
   /*
   serial prints a given string message
   */
-void MPL::debug(String msg){
+/*void MPL::debug(String msg){
   Serial.println(msg);
-}
+}*/
 
