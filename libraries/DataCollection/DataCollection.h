@@ -8,6 +8,9 @@
 #include <i2c_t3.h>
 #include <inttypes.h>
 #include <stdio.h>
+#include <SD.h>
+#include <SD_t3.h>
+#include <SPI.h>
 
 
 #define BUFFER_SIZE 50
@@ -42,13 +45,7 @@ typedef short int16_t;
 class DataCollection {
 
 
-
-
-
-
-
 	//---------------------------------------------------------------------PRIVATE?
-
 
 
 	//Buffer size
@@ -159,8 +156,16 @@ class DataCollection {
 
 	float alt2RAW[BUFFER_SIZE];
 	float alt2FILTER[BUFFER_SIZE];
-
+	
+	
 public:
+	File flightData;
+	
+	unsigned long curr_time;
+	
+	String dataString = "";
+	
+	const char* file_ptr;
 
 	float timeDelta;
 	//these are the filtered values i.e. best guess
@@ -177,9 +182,9 @@ public:
 	//filtered data from the syste	
 	int16_t  previousAcceleration[3];
 
-	DataCollection();
+	DataCollection(String fileName);
 	int update();
-	int writeToSD();
+	int writeToSD(String fileName);
 	int getBufferSize();
 	void filterALT1();
 

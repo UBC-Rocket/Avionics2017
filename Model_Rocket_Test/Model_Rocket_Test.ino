@@ -12,6 +12,7 @@
 #include <SD.h>
 #include <SD_t3.h>
 #include <SPI.h>
+#include <DataCollection.h>
 
 
 int i = 0;  //data write position accel
@@ -19,13 +20,16 @@ int j = 0;  //data write position gyro
 int k = 0;  //data write position mag
 bool w = 1; //wire for sensor initialization
 
-//initialize sensors
+/*//initialize sensors
 MPL PSensor;
 MPU IMU;
+*/
+DataCollection* dataCollector;
 
 //initialize flight data log file
 File flightData;
-//String fileName = "
+String fileName = "FLIGHT~2.TXT";
+const char* file_ptr = (const char*) &fileName;
 
 //initialize sensor readings
 float curr_alt; 
@@ -54,6 +58,8 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
   
+  dataCollector = new DataCollection("FLIGHT~2.TXT");
+  
   delay(2000);
   
   // see if the card is present and can be initialized
@@ -64,13 +70,13 @@ void setup() {
   Serial.println("Card successfully initialized");
   Serial.println("---------------");
 
-  // Open existing file on SD card
+/*  // Open existing file on SD card
   //Serial.println("Opening test file..."); 
-  flightData = SD.open("FLIGHT~1.TXT", FILE_WRITE);
+  flightData = SD.open("FLIGHT~2.TXT", FILE_WRITE);
   
   if(flightData){
     flightData.println("-----------------");
-    flightData.println("Time, Altitude, X Accel, Y Accel, Z Accel, X Gyro, Y Gyro, Z Gyro, X Mag, Y Mag, Z Mag");
+    flightData.println("Time, Altitude, X Accel, Y Accel, Z Accel");
     Serial.println("File write successful");
     //closing the file saves the data to the SD card
     flightData.close();
@@ -78,7 +84,7 @@ void setup() {
   else {
     Serial.println("File does not exist");
   }
-  
+  */
   //Serial.println("---------------");
   
   
@@ -86,7 +92,7 @@ void setup() {
   Serial.println(millis()/1000);
   Serial.println("Sensor Initialization: ");
   
-  // Initialize sensors
+/*  // Initialize sensors
   PSensor.begin(w, 0x60);
   IMU.begin(w, 0x68);
   IMU.initGyro(2000);
@@ -95,6 +101,7 @@ void setup() {
 
   Serial.println("Sensor self test:");
   Serial.println(IMU.selfTest());
+  */
 }
 
 void loop(){
@@ -103,29 +110,45 @@ void loop(){
   //update current values from sensors
   Serial.println("Reading sensor data");
   curr_time = millis();
-  PSensor.readAlt(alt_ptr);
+  /*PSensor.readAlt(alt_ptr);
   IMU.readGyro(curr_gyro); 
   IMU.readAccel(curr_accel); 
   IMU.readMag(curr_mag); 
-
-  Serial.println("---------------");
+  */
+  dataCollector->update();
+  
+/*  Serial.println("---------------");
   Serial.println("readGyro returns:");
   Serial.println(IMU.readGyro(curr_gyro));
   Serial.println("readAccel returns:");
   Serial.println(IMU.readAccel(curr_accel));
   Serial.println("readMag returns:");
   Serial.println(IMU.readMag(curr_mag));
+  */
+  curr_alt = dataCollector->currentALTITUDE;
+  curr_accel[0] = dataCollector->currentAcceleration[0];
+  curr_accel[1] = dataCollector->currentAcceleration[1];
+  curr_accel[2] = dataCollector->currentAcceleration[2];
+/*  curr_gyro[0] = dataCollector->currentAcceleration[0];
+  curr_gyro[1] = dataCollector->currentAcceleration[1];
+  curr_gyro[2] = dataCollector->currentAcceleration[2];
+  curr_mag[0] = dataCollector->currentAcceleration[0];
+  curr_mag[1] = dataCollector->currentAcceleration[1];
+  curr_mag[2] = dataCollector->currentAcceleration[2];
+  */
   
-  dataString += (curr_time/1000.0);
+/*  dataString += (curr_time/1000.0);
   dataString += (", ");
   dataString += (curr_alt);  
   dataString += (", ");  
-  if(i<3){
+  while(i<3){
     dataString += (curr_accel[i]);  
     dataString += (", ");  
     i++;
   }
-  if(j<3){
+  */
+  
+/*  if(j<3){
     dataString += (curr_gyro[i]);  
     dataString += (", ");  
     j++;
@@ -135,14 +158,16 @@ void loop(){
     dataString += (", ");  
     k++;
   }
-
+*/
   
-  flightData = SD.open("FLIGHT~1.TXT", FILE_WRITE);
+/*  flightData = SD.open("FLIGHT~2.TXT", FILE_WRITE);
   flightData.println(dataString);
   Serial.println("Printed to data log");
   flightData.flush();
   flightData.close();
+*/
 
+  dataCollector->writeToSD("FLIGHT~2.TXT");
   Serial.println("Output to SD:");
   Serial.println(dataString);
   // Re-initialize data string and indices
