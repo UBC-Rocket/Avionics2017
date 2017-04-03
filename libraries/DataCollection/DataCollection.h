@@ -165,6 +165,8 @@ public:
 	
 	String dataString = "";
 	
+ 	const char* fileName2 = "FLIGHT~3.TXT";
+
 	const char* file_ptr;
 
 	float timeDelta;
@@ -182,9 +184,9 @@ public:
 	//filtered data from the syste	
 	int16_t  previousAcceleration[3];
 
-	DataCollection(String fileName);
+	DataCollection();
 	int update();
-	int writeToSD(String fileName);
+	int writeToSD();
 	int getBufferSize();
 	void filterALT1();
 

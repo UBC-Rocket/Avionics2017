@@ -12,7 +12,8 @@
 #define CLK 13 // SD clock
 #define LED_PIN 7 // LED pin for initialization
 
- DataCollection::DataCollection(String fileName) {
+
+ DataCollection::DataCollection() {
 	Serial.begin(9600);
 	delay(500);
 
@@ -29,7 +30,7 @@
 	
 	//initialize SD file and data string
 	file_ptr = (const char*)&fileName;
-	flightData = SD.open(file_ptr, FILE_WRITE);
+	flightData = SD.open(fileName2, FILE_WRITE);
 	if(flightData){
     		flightData.println("-----------------");
     		flightData.println("Time, Altitude, X Accel, Y Accel, Z Accel");
@@ -75,7 +76,7 @@ int DataCollection::update() {
 	return 0;
 }
 
-int DataCollection::writeToSD(String fileName) {
+int DataCollection::writeToSD() {
 	
 	curr_time = millis();
 
@@ -90,7 +91,7 @@ int DataCollection::writeToSD(String fileName) {
     	dataString += (currentAcceleration[2]);  
     	dataString += (", ");  
 	
-  	flightData = SD.open(file_ptr, FILE_WRITE);
+  	flightData = SD.open(fileName2, FILE_WRITE);
   	flightData.println(dataString);
   	flightData.flush();
   	flightData.close();

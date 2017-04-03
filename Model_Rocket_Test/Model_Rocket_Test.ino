@@ -167,9 +167,9 @@ void loop(){
   flightData.close();
 */
 
-  dataCollector->writeToSD("FLIGHT~2.TXT");
-  Serial.println("Output to SD:");
-  Serial.println(dataString);
+  dataCollector->writeToSD();
+//  Serial.println("Output to SD:");
+  Serial.println(dataCollector->dataString);
   // Re-initialize data string and indices
   dataString = "";
   i=0;
