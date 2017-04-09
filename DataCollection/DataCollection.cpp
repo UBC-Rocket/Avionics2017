@@ -69,7 +69,7 @@ int DataCollection::popMag(float mag[]) {
  * \return Returns most recent altitude reading or -1 if the buffer is empty
  */
 
-int DataCollection::popAlt(float *alt) {
+int DataCollection::popAlt(float &alt) {
   if(bufPosition < 1) return -1;
   return altReadings[bufPosition - 1];
 }
@@ -138,7 +138,7 @@ int DataCollection::collect() {
     MPL *mpl = mpls[x];
 
     float alt;
-    mplError[x] = mplError[x] ? mplError[x] : mpl->readAGL(&alt);
+    mplError[x] = mplError[x] ? mplError[x] : mpl->readAGL(alt);
     alts[x - droppedReadings] = alt;
   }
 

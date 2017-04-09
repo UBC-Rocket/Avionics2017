@@ -68,13 +68,13 @@ void MPL::setGround() {
 /*
 Reads the current altitude in meters and return that value minus the gound level offset if it has been set.
 */
-int MPL::readAGL(float *data) {
+int MPL::readAGL(float &data) {
   int err = readAlt(data);
-  *data -= groundLevel;
+  data -= groundLevel;
   return err;
 }
 
-int MPL::readAlt(float *data) {
+int MPL::readAlt(float &data) {
   int err;
   uint8_t buffer[3];
 
@@ -83,8 +83,8 @@ int MPL::readAlt(float *data) {
 
   if(err = read(ALT_REG, 3, buffer)) return err;
 
-  *data = (float)((buffer[0]<<8) | buffer[1]); //The high byte of the altitude
-  *data += (float)(buffer[2] >> 4) / 16.0; //The fractional component of the altitude
+  data = (float)((buffer[0]<<8) | buffer[1]); //The high byte of the altitude
+  data += (float)(buffer[2] >> 4) / 16.0; //The fractional component of the altitude
 
   return 0;
 }
@@ -92,14 +92,14 @@ int MPL::readAlt(float *data) {
 /*
 returns the temperature in degrees Celsius
 */
-int MPL::readTemp(float *data) {
+int MPL::readTemp(float &data) {
   int err;
   uint8_t buffer[2];
 
   if(err = read(TEMP_REG, 2, buffer)) return err; //read temperature register
 
-  *data = buffer[0];//  Upper 8 bits of the temperature, representing the numbers before the decimal
-  *data += float(buffer[1] >> 4) / 16.0;//  Lower 4 bits of the temperature, representing the numbers
+  data = buffer[0];//  Upper 8 bits of the temperature, representing the numbers before the decimal
+  data += float(buffer[1] >> 4) / 16.0;//  Lower 4 bits of the temperature, representing the numbers
 
   return 0;
 }
