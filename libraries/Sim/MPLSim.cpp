@@ -1,4 +1,4 @@
-#include "MPL.h"
+#include "MPLSim.h"
 #include <i2c_t3.h>
 
 #define REG_INIT 0xA1
@@ -14,18 +14,19 @@ int MPL::begin(bool whichWire, uint8_t Addr) {
 Set the ground level to be subtracted off the real altitude measurement
 */
 void MPL::setGround() {
-  groundLevel = readAlt();
+   readAlt(groundLevel);
 }
 
 /*
 Reads the current altitude in meters and return that value minus the gound level offset if it has been set.
 */
-int MPL::readAGL(float *data) {
-  data = readAlt() - groundLevel;
+int MPL::readAGL(float &data) {
+  readAlt(data);
+  data -= groundLevel;
   return 0;
 }
 
-int MPL::readAlt(float *data) {
+int MPL::readAlt(float &data) {
   data = alts[getTimeIndex()];
   return 0;
 }
@@ -33,13 +34,13 @@ int MPL::readAlt(float *data) {
 /*
 returns the temperature in degrees Celsius
 */
-int MPL::readTemp(float *data) {
-  data = temps(getTimeIndex());
+int MPL::readTemp(float &data) {
+  data = temps[getTimeIndex()];
   return 0;
 }
 
-int MPU::getTimeIndex() {
-  if(lastTimeIndes >= SIM_LENGTH) return SIM_LENGTH;
+int MPL::getTimeIndex() {
+  if(lastTimeIndex >= SIM_LENGTH) return SIM_LENGTH;
 
   unsigned long time = micros() - start;
 

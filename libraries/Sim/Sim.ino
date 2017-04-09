@@ -1,12 +1,12 @@
 #include "MPUSim.h"
 #include "MPLSim.h"
 
-MPUSim *mpu;
-MPLSim *mpl;
+MPU *mpu;
+MPL *mpl;
 
 void setup() {
-  mpu = new MPUSim();
-  mpl = new MPLSim();
+  mpu = new MPU();
+  mpl = new MPL();
 
   mpu->begin(0,0);
   mpl->begin(0,0);
