@@ -23,8 +23,9 @@ int DataCollection::begin(MPU *mpu[], int MPUlen, MPL *mpl[], int MPLlen) {
     mplError[i] = 0;
   }
 
-  dataFile = SD.open("RocketData.txt", FILE_WRITE);
+  File dataFile = SD.open("RocketData.txt", FILE_WRITE);
   dataFile.println("Time; Gyro; Accel; Alt;");
+  dataFile.close();
 
   return 0;
 }
@@ -82,8 +83,6 @@ int DataCollection::popAlt(float &alt) {
 
 int DataCollection::collect() {
   if(bufPosition > BUFFER_SIZE) return 0;
-  if(bufferLock) return -1;
-  bufferLock = 1;
 
   time[bufPosition] = micros();
   int droppedReadings; //number of sensor readings ignored due to communication issues
@@ -145,7 +144,6 @@ int DataCollection::collect() {
   alts[bufPosition] = average(alts, MPLLength - droppedReadings);
 
   bufPosition++;
-  bufferLock = 0;
   return BUFFER_SIZE - bufPosition;
 }
 
@@ -166,19 +164,28 @@ int DataCollection::writeData() {
   lastAlt = altReadings[bufPosition - 1];
   lastTime = time[bufPosition - 1];
 
-  dataFile = SD.open("RocketData.txt", FILE_WRITE);
+  File dataFile = SD.open("RocketData.txt", FILE_WRITE);
 
   for(int i = 0; i < bufPosition; i++) {
-    dataFile.print(time[i] + "; ");
-    dataFile.print(gyroReadings[i][0] + ", ");
-    dataFile.print(gyroReadings[i][1] + ", ");
-    dataFile.print(gyroReadings[i][2] + "; ");
+    dataFile.print(time[i]);
+    dataFile.print("; ");
+    
+    dataFile.print(gyroReadings[i][0]);
+    dataFile.print(", ");
+    dataFile.print(gyroReadings[i][1]);
+    dataFile.print(", ");
+    dataFile.print(gyroReadings[i][2]);
+    dataFile.print("; ");
 
-    dataFile.print(accelReadings[i][0] + ", ");
-    dataFile.print(accelReadings[i][1] + ", ");
-    dataFile.print(accelReadings[i][2] + "; ");
+    dataFile.print(accelReadings[i][0]);
+    dataFile.print(", ");
+    dataFile.print(accelReadings[i][1]);
+    dataFile.print(", ");
+    dataFile.print(accelReadings[i][2]);
+    dataFile.print("; ");
 
-    dataFile.println(altReadings[i] + ";");
+    dataFile.println(altReadings[i]);
+    dataFile.print(";");
   }
 
   dataFile.close();
