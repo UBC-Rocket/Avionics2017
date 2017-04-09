@@ -3,14 +3,8 @@
  */
 
 #include <Rocket.h>
-/*
-#include "MPU.h"
-#include "MPL.h"
-*/
-
-#include "Sim/MPUSim.h"
-#include "Sim/MPLSim.h"
-
+#include "MPUSim.h"
+#include "MPLSim.h"
 #include <i2c_t3.h>
 #include <TimerOne.h>
 #include <DataCollection.h>
@@ -45,9 +39,7 @@ const int PAYLOAD_IGNITION_CIRCUIT = 8; //pin to nose cone ignition circuit
 const int MAIN_IGNITION_CIRCUIT = 9;
 
 Rocket rocket(STANDBY, STANDBY);
-DataCollection dataCollector;
-MPU *mpu1;
-MPL *mpl1;
+DataCollection* dataCollector;
 
 //count variables for decisions
 int launch_count = 0;
@@ -69,29 +61,24 @@ unsigned long deploy_main_time = 0;
 //temp for printing and TESTING
 float curr_altitude;
 float prev_altitude;
-float curr_Acc[3];
-float prev_Acc[3];
+int16_t curr_Acc[3];
+int16_t prev_Acc[3];
 
 void setup() {
 
   Serial.begin(9600);
-  delay(500);
-  
-  mpu1 = new MPU();
-  mpl1 = new MPL();
+  while(!Serial){
+    
+  }
 
-  mpu1->begin(0, 0);
-  mpl1->begin(0, 0);
-
-  MPU *mpus[2] = {mpu1};
-  MPL *mpls[1] = {mpl1};
+  Serial.println("begun");
 
   //Initialize pins for ignition circuits as outputs
   pinMode(DROGUE_IGNITION_CIRCUIT, OUTPUT);
   pinMode(PAYLOAD_IGNITION_CIRCUIT, OUTPUT);
   pinMode(MAIN_IGNITION_CIRCUIT, OUTPUT);
-
-  dataCollector.begin(mpus, 1, mpls, 1);
+  
+  dataCollector = new DataCollection();
 
   //do we wanna turn on an LED to confirm that we're all initialized?
 }
@@ -103,7 +90,7 @@ void setup() {
  */
 void loop(){
   //Update The Data, Get next Best Guess at ALT ACC and VELO------------------
-  dataCollector.collect();
+  dataCollector->collect();
 
   curr_time = millis();
 
@@ -118,11 +105,12 @@ void loop(){
   //PRINT THE DATA THIS IS FOR TESTING ONLY!
   Serial.println("Current time: " + (String)curr_time);
 
-  curr_altitude = dataCollector.curr_alt;
+  curr_altitude = dataCollector->curr_alt;
   Serial.println("Current Altitude: " + (String)curr_altitude);
 
-  dataCollector.popAccel(curr_Acc);
-
+  curr_Acc[0] = dataCollector->curr_accel[0];
+  curr_Acc[1] = dataCollector->curr_accel[1];
+  curr_Acc[2] = dataCollector->curr_accel[2];
   //TODO: sqrt squared of these values??
   Serial.println("Current Acceleration X: " + (String)curr_Acc[0] + " Y: "+(String)curr_Acc[1] + " Z: " +(String)curr_Acc[2]);
 
