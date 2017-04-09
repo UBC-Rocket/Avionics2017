@@ -3,7 +3,7 @@
 #define ACCEL_FS 16
 #define GYRO_FS 2000
 
-int DataCollection::begin(MPU *mpu[], int MPUlen, MPL *mpl[], int MPLlen) {
+int DataCollection::begin(MPUSim *mpu[], int MPUlen, MPLSim *mpl[], int MPLlen) {
   bufPosition = 0;
 
   MPULength = MPUlen;

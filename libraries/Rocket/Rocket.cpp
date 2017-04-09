@@ -5,8 +5,6 @@
 
 #include "Rocket.h"
 #include "i2c_t3.h"
-#include "MPU.h"
-#include "MPL.h"
 
 //note: these are calibrated(ish) for GIANT rocket, no little ones
 #define SIM_LAUNCH_ACCEL 	40 		//assuming sims are accurate, launch accel > 50

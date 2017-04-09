@@ -135,7 +135,7 @@ int DataCollection::collect() {
     MPL *mpl = mpls[x];
 
     float alt;
-    mplError[x] = mplError[x] ? mplError[x] : mpl->readAGL(&alt);
+    mplError[x] = mplError[x] ? mplError[x] : mpl->readAGL(alt);
     alts[x - droppedReadings] = alt;
   }
 
