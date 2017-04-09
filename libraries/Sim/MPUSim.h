@@ -1,5 +1,5 @@
-#ifndef MPUSIM_H
-#define MPUSIM_H
+#ifndef MPU_H
+#define MPU_H
 
 #include <Arduino.h>
 #include <inttypes.h>

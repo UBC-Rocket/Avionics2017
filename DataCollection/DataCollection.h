@@ -38,7 +38,7 @@ public:
   int popGyro(float gyro[]);
   int popAccel(float accel[]);
   int popMag(float mag[]);
-  int popAlt(float *alt);
+  int popAlt(float &alt);
 
 	int collect();
   int writeData();
