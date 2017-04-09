@@ -4,7 +4,7 @@
 #define REG_INIT 0xA1
 
 
-int MPL::begin(bool whichWire) {
+int MPL::begin(bool whichWire, uint8_t Addr) {
   start = micros();
   lastTimeIndex = 0;
   return 0;
@@ -14,25 +14,28 @@ int MPL::begin(bool whichWire) {
 Set the ground level to be subtracted off the real altitude measurement
 */
 void MPL::setGround() {
-  groundLevel = alts[0];
+  groundLevel = readAlt();
 }
 
 /*
 Reads the current altitude in meters and return that value minus the gound level offset if it has been set.
 */
-float MPL::readAGL() {
-  return readAlt() - groundLevel;
+int MPL::readAGL(float *data) {
+  data = readAlt() - groundLevel;
+  return 0;
 }
 
-float MPL::readAlt() {
-  return alts[getTimeIndex()];
+int MPL::readAlt(float *data) {
+  data = alts[getTimeIndex()];
+  return 0;
 }
 
 /*
 returns the temperature in degrees Celsius
 */
-float MPL::readTemp() {
-  return temps(getTimeIndex());
+int MPL::readTemp(float *data) {
+  data = temps(getTimeIndex());
+  return 0;
 }
 
 int MPU::getTimeIndex() {

@@ -45,20 +45,6 @@ int MPL::begin(bool whichWire, uint8_t Addr) {
   return 0;
 }
 
-int MPL::selfTest() {
-  if(wire) {
-    Wire1.setDefaultTimeout(100);
-
-    Wire1.setDefaultTimeout(WIRE_TIMEOUT);
-
-  } else {
-    Wire.setDefaultTimeout(100);
-
-    Wire.setDefaultTimeout(WIRE_TIMEOUT);
-  }
-  return 0; //NOT FLIGHT CODE THIS SHOULD DO SOMETHING!-------------------------------------------------------------------------
-}
-
 /*
 Set the ground level to be subtracted off the real altitude measurement
 */

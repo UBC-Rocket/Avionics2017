@@ -13,21 +13,17 @@ class MPL {
   float groundLevel;
 
 public:
-  int begin(bool whichWire);
+  int begin(bool whichWire, uint8_t Addr);
 
   // Initialization functions
   void setGround();
 
-  // Check for data functions
-  bool getDataReady();
-
   // Read data functions
-  float readAGL();
-  float readAlt();
+  int readAGL(float *data);
+  int readAlt(float *data);
 
-  float readTemp();
+  int readTemp(float *data);
 private:
-  void debug(String msg);
   int getTimeIndex();
 };
 

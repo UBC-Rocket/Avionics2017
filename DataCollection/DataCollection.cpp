@@ -23,6 +23,9 @@ int DataCollection::begin(MPU *mpu[], int MPUlen, MPL *mpl[], int MPLlen) {
     mplError[i] = 0;
   }
 
+  dataFile = SD.open("RocketData.txt", FILE_WRITE);
+  dataFile.println("Time; Gyro; Accel; Alt;");
+
   return 0;
 }
 
@@ -151,13 +154,11 @@ int DataCollection::collect() {
  */
 
 int DataCollection::writeData() {
-  if (bufferLock) return -1;
-  bufferLock = 1;
   float lastGyro[3];
   float lastAccel[3];
   float lastMag[3];
   float lastAlt;
-  unsigned int lastTime;
+  unsigned long lastTime;
 
   readBuffer3(gyroReadings, lastGyro);
   readBuffer3(accelReadings, lastAccel);
@@ -165,7 +166,22 @@ int DataCollection::writeData() {
   lastAlt = altReadings[bufPosition - 1];
   lastTime = time[bufPosition - 1];
 
-  //write data to SD card here
+  dataFile = SD.open("RocketData.txt", FILE_WRITE);
+
+  for(int i = 0; i < bufPosition; i++) {
+    dataFile.print(time[i] + "; ");
+    dataFile.print(gyroReadings[i][0] + ", ");
+    dataFile.print(gyroReadings[i][1] + ", ");
+    dataFile.print(gyroReadings[i][2] + "; ");
+
+    dataFile.print(accelReadings[i][0] + ", ");
+    dataFile.print(accelReadings[i][1] + ", ");
+    dataFile.print(accelReadings[i][2] + "; ");
+
+    dataFile.println(altReadings[i] + ";");
+  }
+
+  dataFile.close();
 
   bufPosition = 0;
   loadBuffer3(lastGyro, gyroReadings, bufPosition);
@@ -175,7 +191,6 @@ int DataCollection::writeData() {
   time[bufPosition] = lastTime;
 
   bufPosition++;
-  bufferLock = 0;
   return 0;
 }
 
