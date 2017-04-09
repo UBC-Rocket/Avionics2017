@@ -22,13 +22,13 @@ void setup() {
   mpl1 = new MPL();
 
   Serial.println("MPU1 init: ");
-  Serial.println(mpu1->begin(0, 0x68));
+  Serial.println(mpu1->begin(1, 0x68));
 
   Serial.println("MPU2 init: ");
-  Serial.println(mpu2->begin(1, 0x68));
+  Serial.println(mpu2->begin(1, 0x69));
 
   Serial.println("MPL1 init: ");
-  Serial.println(mpl1->begin(1, 0x60));
+  Serial.println(mpl1->begin(0, 0x60));
 
   MPU *mpus[2] = {mpu1, mpu2};
   MPL *mpls[1] = {mpl1};
