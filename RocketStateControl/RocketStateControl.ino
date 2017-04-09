@@ -63,7 +63,7 @@ void setup() {
  */
 void loop(){
   //Update The Data, Get next Best Guess at ALT ACC and VELO------------------
-  dataCollector->update();
+  dataCollector->collect();
   
   //make sure ignition pins stay low!
   digitalWrite(DROGUE_IGNITION_CIRCUIT, LOW);
@@ -73,12 +73,12 @@ void loop(){
   curr_time = millis();
   Serial.println("Current time: " + (String)curr_time);
 
-  curr_altitude = dataCollector->currentALTITUDE;
+  curr_altitude = dataCollector->curr_alt;
   Serial.println("Current Altitude: " + (String)curr_altitude);
 
-  curr_Acc[0] = dataCollector->currentAcceleration[0];
-  curr_Acc[1] = dataCollector->currentAcceleration[1];
-  curr_Acc[2] = dataCollector->currentAcceleration[2];
+  curr_Acc[0] = dataCollector->curr_accel[0];
+  curr_Acc[1] = dataCollector->curr_accel[1];
+  curr_Acc[2] = dataCollector->curr_accel[2];
   Serial.println("Current Acceleration X: " + (String)curr_Acc[0] + " Y: "+(String)curr_Acc[1] + " Z: " +(String)curr_Acc[2]);
 
   //MAKE A STATE CHANGE----------------------------------------
