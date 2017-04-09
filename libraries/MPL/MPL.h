@@ -19,8 +19,6 @@ class MPL {
 public:
   int begin(bool whichWire, uint8_t Addr);
 
-  int selfTest();
-
   // Initialization functions
   void setGround();
 

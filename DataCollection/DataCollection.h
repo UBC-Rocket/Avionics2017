@@ -8,6 +8,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <Arduino.h>
+#include <SD.h>
 
 #define BUFFER_SIZE 500
 
@@ -29,7 +30,6 @@ class DataCollection {
 	float magReadings[BUFFER_SIZE][3];
 	float altReadings[BUFFER_SIZE];
   unsigned long time[BUFFER_SIZE];
-  bool bufferLock;
 
 public:
 
