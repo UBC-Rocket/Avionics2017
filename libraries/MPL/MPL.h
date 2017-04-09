@@ -25,10 +25,10 @@ public:
   void setGround();
 
   // Read data functions
-  int readAGL(float *data);
-  int readAlt(float *data);
+  int readAGL(float &data);
+  int readAlt(float &data);
 
-  int readTemp(float *data);
+  int readTemp(float &data);
 private:
   void debug(String msg);
 

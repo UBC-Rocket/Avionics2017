@@ -3,8 +3,14 @@
  */
 
 #include <Rocket.h>
+/*
+#include "MPU.h"
+#include "MPL.h"
+*/
+
 #include "Sim/MPUSim.h"
 #include "Sim/MPLSim.h"
+
 #include <i2c_t3.h>
 #include <TimerOne.h>
 #include <DataCollection.h>
@@ -70,7 +76,7 @@ void setup() {
 
   Serial.begin(9600);
   delay(500);
-
+  
   mpu1 = new MPU();
   mpl1 = new MPL();
 
