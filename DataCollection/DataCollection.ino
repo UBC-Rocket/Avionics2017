@@ -1,11 +1,10 @@
 #include <i2c_t3.h>
 #include <String.h>
-#include <MPL.h>
-#include <MPU.h>
+#include "MPLSim.h"
+#include "MPUSim.h"
 #include "DataCollection.h"
 
 MPU *mpu1;
-MPU *mpu2;
 MPL *mpl1;
 
 DataCollection collector;
@@ -18,23 +17,19 @@ void setup() {
   Serial.println("==============");
 
   mpu1 = new MPU();
-  mpu2 = new MPU();
   mpl1 = new MPL();
 
   Serial.println("MPU1 init: ");
   Serial.println(mpu1->begin(1, 0x68));
 
-  Serial.println("MPU2 init: ");
-  Serial.println(mpu2->begin(1, 0x69));
-
   Serial.println("MPL1 init: ");
   Serial.println(mpl1->begin(0, 0x60));
 
-  MPU *mpus[2] = {mpu1, mpu2};
+  MPU *mpus[2] = {mpu1};
   MPL *mpls[1] = {mpl1};
 
   Serial.println("Data Collection init");
-  collector.begin(mpus, 2, mpls, 1);
+  collector.begin(mpus, 1, mpls, 1);
 }
 
 void loop() {

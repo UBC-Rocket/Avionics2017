@@ -56,9 +56,9 @@ void MPL::setGround() {
   delay(500);
   for(int x = 0; x < readings; x++) {
     delay (100);
-	float groundGeuss = 0;
-    readAlt(&groundGeuss);
-	groundLevel += groundGeuss;
+    float groundGeuss = 0;
+    readAlt(groundGeuss);
+    groundLevel += groundGeuss;
     debug(x);
     debug(groundLevel);
   }

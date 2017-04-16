@@ -26,13 +26,11 @@ void setup() {
   mpu->initAccel(16);
 
   delay(2000);
-
-  float tmp[3];
-  Serial.println(mpu->readAccel(tmp));
-  Serial.println(tmp[2]);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
+  float tmp[3];
+  Serial.println(mpu->readAccel(tmp));
+  Serial.println(tmp[2]);
+  delay(1000);
 }
