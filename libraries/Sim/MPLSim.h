@@ -3,11 +3,12 @@
 
 #include <inttypes.h>
 #include <Arduino.h>
+#include <avr/pgmspace.h>
 
 typedef short int16_t;
 
 class MPL {
-  #include "testData.h"
+  #include "MPLData.h"
 
   unsigned long start;
   int lastTimeIndex;

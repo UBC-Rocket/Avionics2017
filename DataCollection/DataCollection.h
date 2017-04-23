@@ -10,7 +10,8 @@
 #include <Arduino.h>
 #include <SD.h>
 
-#define BUFFER_SIZE 500
+#define BUFFER_SIZE 100
+#define NSENSORS 3
 
 //MPL alt = new MPL(0);
 //MPU pos = new MPU(0);
@@ -18,10 +19,10 @@
 typedef short int16_t;
 
 class DataCollection {
-  MPU *mpus[5];
-  int mpuError[5];
-  MPL *mpls[5];
-  int mplError[5];
+  MPU *mpus[NSENSORS];
+  int mpuError[NSENSORS];
+  MPL *mpls[NSENSORS];
+  int mplError[NSENSORS];
   int MPULength, MPLLength;
 
   int bufPosition;

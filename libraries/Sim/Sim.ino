@@ -4,11 +4,15 @@
 MPU *mpu;
 MPL *mpl;
 
+float tmp[10000];
+
 void setup() {
   Serial.begin(9600);
   while(!Serial) {
-    delay(1);
+    delay(100);
   }
+  tmp[0] = 1;
+  tmp[10000-1] = 1;
 
   Serial.println("Beginning...");
 

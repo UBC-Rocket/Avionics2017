@@ -12,12 +12,13 @@ DataCollection collector;
 void setup() {
   Serial.begin(9600);
 
-  while(!Serial) delay(100);
+  while(!Serial) delay(1);
   Serial.println("Beginning...");
   Serial.println("==============");
 
-  mpu1 = new MPU();
   mpl1 = new MPL();
+  Serial.println("mpl1 created");
+  mpu1 = new MPU();
 
   Serial.println("MPU1 init: ");
   Serial.println(mpu1->begin(1, 0x68));
