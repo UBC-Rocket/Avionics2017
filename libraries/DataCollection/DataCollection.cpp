@@ -1,4 +1,3 @@
-
 #include <DataCollection.h>
 
 
@@ -17,9 +16,9 @@
 	PSensor1 = new MPL;
 	PSensor1->begin(0);
 	PSensor1->setGround(); // think we need this (???? double check)
-	
+
 	//Initialize pins for ignition circuits as outputs
-	
+
 	update();
 }
 
@@ -27,8 +26,8 @@
 int DataCollection::update() {
 
 	//stage 1, get raw data put it in the Buffers
-	
-	//stage 2, do math to get the right values into the BEST GUESS feilds 
+
+	//stage 2, do math to get the right values into the BEST GUESS feilds
 
 
 
@@ -41,7 +40,7 @@ int DataCollection::update() {
 	previousAcceleration[0] = currentAcceleration[0];
 	previousAcceleration[1] = currentAcceleration[1];
 	previousAcceleration[2] = currentAcceleration[2];
-	
+
 	mpu1.readAccel(currentAcceleration);
 
 

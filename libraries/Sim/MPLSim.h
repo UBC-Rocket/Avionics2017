@@ -3,17 +3,24 @@
 
 #include <inttypes.h>
 #include <Arduino.h>
-#include <avr/pgmspace.h>
+
+#define BUF_LENGTH 100
+
 
 typedef short int16_t;
 
 class MPL {
-  #include "MPLData.h"
+  unsigned int times[BUF_LENGTH];
+  float alts[BUF_LENGTH];
+  float temps[BUF_LENGTH];
+
+  int filePos;
+  int lastPos;
 
   unsigned long start;
-  int lastTimeIndex;
   float groundLevel;
 
+  int addr;
 public:
   int begin(bool whichWire, uint8_t Addr);
 
@@ -25,8 +32,10 @@ public:
   int readAlt(float &data);
 
   int readTemp(float &data);
+
 private:
-  int getTimeIndex();
+  int getPos(unsigned int time);
+  int updateBuffer();
 };
 
 #endif

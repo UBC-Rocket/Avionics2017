@@ -3,17 +3,24 @@
 
 #include <Arduino.h>
 #include <inttypes.h>
-#include <avr/pgmspace.h>
+
+#define BUF_LENGTH 100
 
 typedef short int16_t;
 
 class MPU {
-  #include "MPUData.h"
+  unsigned int times[BUF_LENGTH];
+  short gyros[BUF_LENGTH];
+  short accels[BUF_LENGTH];
+  short mags[BUF_LENGTH];
+
+  int filePos;
+  int lastPos;
 
   unsigned long start;
-  int lastTimeIndex;
   float gyroFS;
   float accelFS;
+  int addr;
 public:
   int begin(bool whichWire, uint8_t Addr);
   int selfTest();
@@ -29,8 +36,9 @@ public:
   int readGyro(float data[]);
   int readAccel(float data[]);
   int readMag(float data[]);
-private:
-  int getTimeIndex();
 
+private:
+  int getPos(unsigned int time);
+  int updateBuffer();
 };
 #endif

@@ -10,7 +10,7 @@
 #include <Arduino.h>
 #include <SD.h>
 
-#define BUFFER_SIZE 100
+#define BUFFER_SIZE 20
 #define NSENSORS 3
 
 //MPL alt = new MPL(0);
@@ -45,7 +45,7 @@ public:
   int writeData();
 
 private:
-  void readBuffer3(float buf[][3], float data[]);
+  void readBuffer3(float buf[][3], float data[], int pos);
   void loadBuffer3(float data[], float buf[][3], int pos);
 
   void average3(float data[][3], int length, float avg[]);

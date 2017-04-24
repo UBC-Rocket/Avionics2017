@@ -1,12 +1,11 @@
 #include "MPLSim.h"
-#include <i2c_t3.h>
+#include "SD.h"
 
 #define REG_INIT 0xA1
 
-
 int MPL::begin(bool whichWire, uint8_t Addr) {
   start = micros();
-  lastTimeIndex = 0;
+  addr = Addr;
   return 0;
 }
 
@@ -27,7 +26,7 @@ int MPL::readAGL(float &data) {
 }
 
 int MPL::readAlt(float &data) {
-  data = alts[getTimeIndex()];
+  data = alts[getPos(micros() - start)];
   return 0;
 }
 
@@ -35,18 +34,63 @@ int MPL::readAlt(float &data) {
 returns the temperature in degrees Celsius
 */
 int MPL::readTemp(float &data) {
-  data = temps[getTimeIndex()];
+  data = temps[getPos(micros() - start)];
   return 0;
 }
 
-int MPL::getTimeIndex() {
-  if(lastTimeIndex >= SIM_LENGTH) return SIM_LENGTH;
-
-  unsigned long time = micros() - start;
-
-  while(time >= times[lastTimeIndex + 1]) {
-    lastTimeIndex++;
+//gets the position in the buffer corresponding to the passed time. Updates buffer if neccesary.
+int MPL::getPos(unsigned int time) {
+  while(time >= times[lastPos]) {
+    if(lastPos == BUF_LENGTH - 1) {
+      if(updateBuffer()) return 0;
+    }
+    lastPos++;
   }
 
-  return lastTimeIndex;
+  return lastPos;
+}
+
+//updates the buffer with next region of sim data
+int MPL::updateBuffer() {
+  File simData;
+
+  switch(addr) {
+    case 0x68: simData = SD.open("/testMPL.bin", FILE_READ); break;
+    default: simData = SD.open("/testMPL.bin", FILE_READ); break;
+  }
+
+  if(!simData) {
+    Serial.println("Failed to open SD card file.");
+    return 2;
+  }
+  Serial.print("SD File opened: ");
+  Serial.println(simData.name());
+
+  unsigned int *lastTime;
+  float *lastAlt, *lastTemp;
+
+  if(simData.seek(filePos)) {
+    char data[4];
+
+    for(int bufPos = 0; (bufPos < BUF_LENGTH) && simData.available() >= 12; bufPos++) {
+      simData.read(data, 4);
+      lastTime = (unsigned int *)data;
+      times[bufPos] = *lastTime;
+
+      simData.read(data, 4);
+      lastAlt = (float *)data;
+      alts[bufPos] = *lastAlt;
+
+      simData.read(data, 4);
+      lastTemp = (float *)data;
+      temps[bufPos] = *lastTemp;
+    }
+  } else return 1;
+
+  filePos = simData.position();
+
+  simData.close();
+
+  lastPos = 0;
+  return 0;
 }

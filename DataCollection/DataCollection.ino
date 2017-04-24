@@ -16,8 +16,14 @@ void setup() {
   Serial.println("Beginning...");
   Serial.println("==============");
 
+  pinMode(10, OUTPUT); //neccesary for some reason?
+
+  if(!SD.begin(4)) Serial.println("SD failed to load");
+  else Serial.println("SD initialized");
+
   mpl1 = new MPL();
-  Serial.println("mpl1 created");
+  Serial.print("mpl1 created: ");
+  Serial.println((int)(&mpl1), HEX);
   mpu1 = new MPU();
 
   Serial.println("MPU1 init: ");
@@ -34,18 +40,16 @@ void setup() {
 }
 
 void loop() {
-  delay(500);
-  collector.collect();
+  delay(100);
+  Serial.println("Collecting data: " + (String)collector.collect());
   float accel[3];
-  Serial.println("Accels: " + (String)mpu1->readAccel(accel));
+  float alt;
+  Serial.println("Accels: " + (String)collector.popAccel(accel));
+  Serial.println(micros());
   Serial.println(accel[0]);
   Serial.println(accel[1]);
   Serial.println(accel[2]);
+  Serial.println("Alt: " + (String)collector.popAlt(alt));
+  Serial.println(alt);
   Serial.println("--------");
-  
-  int16_t accelRaw[3];
-  //Serial.println("Raw Accels: " + (String)mpu1->readAccel(accelRaw));
-  Serial.println(accelRaw[0]);
-  Serial.println(accelRaw[1]);
-  Serial.println(accelRaw[2]);
 }
