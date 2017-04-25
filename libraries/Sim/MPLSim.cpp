@@ -54,8 +54,9 @@ int MPL::getPos(unsigned int time) {
 int MPL::updateBuffer() {
   File simData;
 
+  //define test file names here
   switch(addr) {
-    case 0x68: simData = SD.open("/testMPL.bin", FILE_READ); break;
+    case 0x60: simData = SD.open("/testMPL.bin", FILE_READ); break;
     default: simData = SD.open("/testMPL.bin", FILE_READ); break;
   }
 

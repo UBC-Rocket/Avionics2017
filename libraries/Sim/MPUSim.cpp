@@ -123,6 +123,7 @@ int MPU::getPos(unsigned int time) {
 int MPU::updateBuffer() {
   File simData;
 
+  //define test file names here
   switch(addr) {
     case 0x68: simData = SD.open("/testMPU.bin", FILE_READ); break;
     default: simData = SD.open("/testMPU.bin", FILE_READ); break;

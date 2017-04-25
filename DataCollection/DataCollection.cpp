@@ -23,9 +23,14 @@ int DataCollection::begin(MPU *mpu[], int MPUlen, MPL *mpl[], int MPLlen) {
     mplError[i] = 0;
   }
 
-  File dataFile = SD.open("RocketData.txt", FILE_WRITE);
-  dataFile.println("Time; Gyro; Accel; Alt;");
-  dataFile.close();
+  pinMode(10, OUTPUT); //neccesary for some reason?
+
+  if(!SD.begin(4)) Serial.println("SD failed to load");
+  else Serial.println("SD initialized");
+
+  File dataFile = SD.open("/rdata.txt", FILE_WRITE);
+  if(!dataFile) debug("Failed to open SD File for initialization");
+  else debug("Opened SD file for initialization: " + (String)dataFile.name());
 
   return 0;
 }
@@ -85,7 +90,7 @@ int DataCollection::popAlt(float &alt) {
 int DataCollection::collect() {
   if(bufPosition >= BUFFER_SIZE) writeData();
 
-  time[bufPosition] = micros();
+  time[bufPosition] = millis();
   int droppedReadings; //number of sensor readings ignored due to communication issues
 
   //Buffers for one timestep of readings from all sensors.
@@ -102,7 +107,6 @@ int DataCollection::collect() {
     }
 
     MPU *mpu = mpus[x];
-    debug("Test MPU" + (String)x + ": " + (String)mpu->selfTest());
 
     float tmp[3];
     mpuError[x] = mpuError[x] ? mpuError[x] : mpu->readGyro(tmp);
@@ -171,7 +175,7 @@ int DataCollection::writeData() {
   for(int i = 0; i < bufPosition; i++) {
     dataFile.print(time[i]);
     dataFile.print("; ");
-    
+
     dataFile.print(gyroReadings[i][0]);
     dataFile.print(", ");
     dataFile.print(gyroReadings[i][1]);
@@ -186,8 +190,8 @@ int DataCollection::writeData() {
     dataFile.print(accelReadings[i][2]);
     dataFile.print("; ");
 
-    dataFile.println(altReadings[i]);
-    dataFile.print(";");
+    dataFile.print(altReadings[i]);
+    dataFile.println(";");
   }
 
   dataFile.close();
@@ -219,7 +223,7 @@ void DataCollection::average3(float data[][3], int length, float avg[]) {
   avg[0] = 0;
   avg[1] = 0;
   avg[2] = 0;
-  
+
   for(int x = 0; x < length; x++) {
     avg[0] += data[x][0];
     avg[1] += data[x][1];
