@@ -1,7 +1,10 @@
 #include <i2c_t3.h>
 #include <String.h>
+
 #include "MPLSim.h"
 #include "MPUSim.h"
+
+
 #include "DataCollection.h"
 
 MPU *mpu1;
@@ -12,18 +15,20 @@ DataCollection collector;
 void setup() {
   Serial.begin(9600);
 
-  while(!Serial) delay(100);
+  while(!Serial) delay(1);
   Serial.println("Beginning...");
   Serial.println("==============");
 
-  mpu1 = new MPU();
   mpl1 = new MPL();
+  Serial.print("mpl1 created: ");
+  Serial.println((int)(&mpl1), HEX);
+  mpu1 = new MPU();
 
   Serial.println("MPU1 init: ");
-  Serial.println(mpu1->begin(1, 0x68));
+  Serial.println(mpu1->begin(0, 0x68));
 
   Serial.println("MPL1 init: ");
-  Serial.println(mpl1->begin(0, 0x60));
+  Serial.println(mpl1->begin(1, 0x60));
 
   MPU *mpus[2] = {mpu1};
   MPL *mpls[1] = {mpl1};
@@ -33,18 +38,16 @@ void setup() {
 }
 
 void loop() {
-  delay(500);
-  collector.collect();
+  delay(100);
+  Serial.println("Collecting data: " + (String)collector.collect());
   float accel[3];
-  Serial.println("Accels: " + (String)mpu1->readAccel(accel));
+  float alt;
+  Serial.println("Accels: " + (String)collector.popAccel(accel));
+  Serial.println(micros());
   Serial.println(accel[0]);
   Serial.println(accel[1]);
   Serial.println(accel[2]);
+  Serial.println("Alt: " + (String)collector.popAlt(alt));
+  Serial.println(alt);
   Serial.println("--------");
-  
-  int16_t accelRaw[3];
-  //Serial.println("Raw Accels: " + (String)mpu1->readAccel(accelRaw));
-  Serial.println(accelRaw[0]);
-  Serial.println(accelRaw[1]);
-  Serial.println(accelRaw[2]);
 }

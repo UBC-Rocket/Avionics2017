@@ -9,38 +9,23 @@ temps = data(:, 6);
 length = size(times, 1);
 %length = 500;
 
-outFile = fopen('testData.h', 'w');
+MPUFile = fopen('testMPU.bin', 'w');
 
-fprintf(outFile, '#define SIM_LENGTH %d\n\n', length);
+for i = 1:length
+   fwrite(MPUFile, times(i), 'int');
+   fwrite(MPUFile, gyros(i), 'short');
+   fwrite(MPUFile, accels(i), 'short');
+   fwrite(MPUFile, mags(i), 'short');
+end
 
-fprintf(outFile, 'const PROGMEM unsigned int times[%d] = {', length);
-fprintf(outFile, '%u, ', times(1:length));
-fprintf(outFile, '};\n');
+fclose(MPUFile);
 
-fprintf(outFile, '#ifdef MPU_H\n');
+MPLFile = fopen('testMPL.bin', 'w');
 
-fprintf(outFile, 'const PROGMEM short gyros[%d] = {', length);
-fprintf(outFile, '%d, ', gyros(1:length));
-fprintf(outFile, '};\n');
+for i = 1:length
+   fwrite(MPLFile, times(i), 'int');
+   fwrite(MPLFile, alts(i), 'float');
+   fwrite(MPLFile, temps(i), 'float');
+end
 
-fprintf(outFile, 'const PROGMEM short accels[%d] = {', length);
-fprintf(outFile, '%d, ', accels(1:length));
-fprintf(outFile, '};\n');
-
-fprintf(outFile, 'const PROGMEM short mags[%d] = {', length);
-fprintf(outFile, '%d, ', mags(1:length));
-fprintf(outFile, '};\n');
-
-fprintf(outFile, '#endif\n\n#ifdef MPL_H\n');
-
-fprintf(outFile, 'const PROGMEM float alts[%d] = {', length);
-fprintf(outFile, '%f, ', alts(1:length));
-fprintf(outFile, '};\n');
-
-fprintf(outFile, 'const PROGMEM float temps[%d] = {', length);
-fprintf(outFile, '%f, ', temps(1:length));
-fprintf(outFile, '};\n');
-
-fprintf(outFile, '#endif');
-
-fclose(outFile);
+fclose(MPLFile);

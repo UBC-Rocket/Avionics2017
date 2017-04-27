@@ -2,15 +2,17 @@
 #define DataCollection_H
 
 
-
 #include "MPLSim.h"
 #include "MPUSim.h"
+
+
 #include <inttypes.h>
 #include <stdio.h>
 #include <Arduino.h>
 #include <SD.h>
 
-#define BUFFER_SIZE 500
+#define BUFFER_SIZE 20
+#define NSENSORS 3
 
 //MPL alt = new MPL(0);
 //MPU pos = new MPU(0);
@@ -18,10 +20,10 @@
 typedef short int16_t;
 
 class DataCollection {
-  MPU *mpus[5];
-  int mpuError[5];
-  MPL *mpls[5];
-  int mplError[5];
+  MPU *mpus[NSENSORS];
+  int mpuError[NSENSORS];
+  MPL *mpls[NSENSORS];
+  int mplError[NSENSORS];
   int MPULength, MPLLength;
 
   int bufPosition;
@@ -44,7 +46,7 @@ public:
   int writeData();
 
 private:
-  void readBuffer3(float buf[][3], float data[]);
+  void readBuffer3(float buf[][3], float data[], int pos);
   void loadBuffer3(float data[], float buf[][3], int pos);
 
   void average3(float data[][3], int length, float avg[]);

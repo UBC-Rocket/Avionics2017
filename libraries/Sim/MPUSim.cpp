@@ -1,19 +1,14 @@
 #include "MPUSim.h"
-#include <i2c_t3.h>
-
-#define WHOAMI 0x1A
+#include "SD.h"
 
 int MPU::begin(bool whichWire, uint8_t Addr) {
   start = micros();
-  lastTimeIndex = 0;
+  addr = Addr;
   return 0;
 }
 
 int MPU::selfTest() {
-  uint8_t test;
-  test = WHOAMI;
-
-  return test;
+  return addr;
 }
 
 int MPU::initGyro(uint16_t fullScale) {
@@ -51,7 +46,7 @@ int MPU::initMag() {
 }
 
 int MPU::readGyro(int16_t *data) {
-  int gyro = gyros[getTimeIndex()];
+  int gyro = gyros[getPos(micros() - start)];
   gyro = gyro * 2000.0 / gyroFS;
 
   data[0] = 0;
@@ -61,7 +56,7 @@ int MPU::readGyro(int16_t *data) {
 }
 
 int MPU::readAccel(int16_t *data) {
-  int accel = accels[getTimeIndex()];
+  int accel = accels[getPos(micros() - start)];
   //accel = accel * 16.0 / accelFS;
 
   data[0] = 0;
@@ -71,7 +66,7 @@ int MPU::readAccel(int16_t *data) {
 }
 
 int MPU::readMag(int16_t* data) {
-  int mag = mags[getTimeIndex()];
+  int mag = mags[getPos(micros() - start)];
 
   data[0] = 0;
   data[1] = 0;
@@ -112,12 +107,64 @@ int MPU::readMag(float data[]) {
   return 0;
 }
 
-int MPU::getTimeIndex() {
-  unsigned long time = micros() - start;
-
-  while(time >= times[lastTimeIndex + 1]) {
-    lastTimeIndex++;
+//gets the position in the buffer corresponding to the passed time. Updates buffer if neccesary.
+int MPU::getPos(unsigned int time) {
+  while(time >= times[lastPos]) {
+    if(lastPos == BUF_LENGTH - 1) {
+      if(updateBuffer()) return 0;
+    }
+    lastPos++;
   }
 
-  return lastTimeIndex;
+  return lastPos;
+}
+
+//updates the buffer with next region of sim data
+int MPU::updateBuffer() {
+  File simData;
+
+  //define test file names here
+  switch(addr) {
+    case 0x68: simData = SD.open("/testMPU.bin", FILE_READ); break;
+    default: simData = SD.open("/testMPU.bin", FILE_READ); break;
+  }
+
+  if(!simData) {
+    Serial.println("Failed to open SD card file.");
+    return 2;
+  }
+  Serial.print("SD File opened: ");
+  Serial.println(simData.name());
+
+  unsigned int *lastTime;
+  short *lastGyro, *lastAccel, *lastMag;
+
+  if(simData.seek(filePos)) {
+    char data[4];
+
+    for(int bufPos = 0; (bufPos < BUF_LENGTH) && simData.available() >= 10; bufPos++) {
+      simData.read(data, 4);
+      lastTime = (unsigned int *)data;
+      times[bufPos] = *lastTime;
+
+      simData.read(data, 2);
+      lastGyro = (short *)data;
+      gyros[bufPos] = *lastGyro;
+
+      simData.read(data, 2);
+      lastAccel = (short *)data;
+      accels[bufPos] = *lastAccel;
+
+      simData.read(data, 2);
+      lastMag = (short *)data;
+      mags[bufPos] = *lastMag;
+    }
+  } else return 1;
+
+  filePos = simData.position();
+
+  simData.close();
+
+  lastPos = 0;
+  return 0;
 }
