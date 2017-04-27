@@ -15,16 +15,14 @@ class Rocket
     Rocket(int currentState, int nextState);
 	void setRocketStates(int currentState, int nextState);
 
-	bool detect_launch(float curr_accel, int launch_count);
-	bool detect_burnout(float curr_accel, float prev_accel, int burnout_count, unsigned long launch_time, unsigned long curr_time);
-
-	bool coasting();
-	bool test_apogee();
-	bool deploy_drogue();
-	bool deploy_payload();
-	bool detect_main_alt(float curr_altitude);
-	bool deploy_main();
-	bool final_descent();
+	int detect_launch(float curr_accel, int launch_count);
+	int detect_burnout(float curr_accel, int burnout_count);
+	int coasting(float curr_accel, int coasting_count);
+	
+	int test_apogee(float curr_altitude, float prev_altitude, int test_apogee_count);
+	
+	int detect_main_alt(float curr_altitude, int detect_main_alt_count);
+	int final_descent(float curr_altitude, float prev_altitude, float curr_accel, float prev_accel, int final_descent_count);
 	void flight_complete();
 	
 	int currentState;

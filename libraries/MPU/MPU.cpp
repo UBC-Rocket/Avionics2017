@@ -1,7 +1,7 @@
 #include "MPU.h"
 #include <i2c_t3.h>
 
-#define INT16_MAX 0x7fff
+//#define INT16_MAX 0x7fff
 #define WIRE_TIMEOUT 2500
 
 #define PWR_MNG 0x6B //register address of pwr management
