@@ -1,10 +1,9 @@
 /*
  * UBC ROCKET
  */
-
 #include <Rocket.h>
-#include <MPU.h>
-#include "MPL.h"
+#include <MPUSim.h>
+#include <MPLSim.h>
 #include <i2c_t3.h>
 #include <TimerOne.h>
 #include <DataCollection.h>
@@ -12,16 +11,16 @@
 /*
  * State Definitions
  */
-#define STANDBY         0
-#define POWERED_ASCENT  1
-#define COASTING        2
-#define TEST_APOGEE     3
-#define DEPLOY_DROGUE   4
-#define DEPLOY_PAYLOAD  5
-#define INITIAL_DESCENT 6
-#define DEPLOY_MAIN     7
-#define FINAL_DESCENT   8
-#define LANDED          9
+#define STANDBY           0
+#define POWERED_ASCENT    1
+#define COASTING          2
+#define TEST_APOGEE       3
+#define DEPLOY_DROGUE     4
+#define DEPLOY_PAYLOAD    5
+#define INITIAL_DESCENT   6
+#define DEPLOY_MAIN       7
+#define FINAL_DESCENT     8
+#define LANDED            9
 
 #define NUM_CHECKS        4     //each condition has to pass 5 times 
 
@@ -31,52 +30,54 @@
 #define MAIN_SIG_TIME     5000  // TIRTH SECONDS
 #define PRED_APOGEE_TIME  28000 //whatever time we think apogee will be at
 
-/*
- * Ignition Circuit Definitions
- */
+//ignition Circuit Definitions
 const int DROGUE_IGNITION_CIRCUIT = 7;  //pin to drogue chute ignition circuit
 const int PAYLOAD_IGNITION_CIRCUIT = 8; //pin to nose cone ignition circuit
 const int MAIN_IGNITION_CIRCUIT = 9;
 
-Rocket rocket(STANDBY, STANDBY);
-DataCollection* dataCollector;
-
 //count variables for decisions
-int launch_count = 0;
-int burnout_count = 0;
-int coasting_count = 0;
-int test_apogee_count = 0;
-int temp_apogee_count = 0;
-int test_apogee_failed = 0;
-int detect_main_alt_count = 0;
-int landed_count = 0;
+int launch_count, burnout_count, coasting_count, test_apogee_count, temp_apogee_count, test_apogee_failed, detect_main_alt_count, landed_count;
 
 //time variables
-unsigned long curr_time;
-unsigned long launch_time;
-unsigned long deploy_drogue_time = 0;
-unsigned long deploy_payload_time = 0;
-unsigned long deploy_main_time = 0;
+unsigned long curr_time, launch_time, deploy_drogue_time, deploy_payload_time, deploy_main_time;
 
 //temp for printing and TESTING
-float curr_altitude;
-float prev_altitude;
-int16_t curr_Acc[3];
-int16_t prev_Acc[3];
+float curr_alt, prev_alt, curr_accel[3], prev_accel[3];
+
+Rocket rocket(STANDBY, STANDBY);
+DataCollection dataCollector;
+MPU *mpu1;
+MPL *mpl1;
 
 void setup() {
 
   Serial.begin(9600);
-  delay(500);
+  while(!Serial) delay(1);
 
   //Initialize pins for ignition circuits as outputs
   pinMode(DROGUE_IGNITION_CIRCUIT, OUTPUT);
   pinMode(PAYLOAD_IGNITION_CIRCUIT, OUTPUT);
   pinMode(MAIN_IGNITION_CIRCUIT, OUTPUT);
   
-  dataCollector = new DataCollection();
+  mpl1 = new MPL();
+  Serial.print("mpl1 created: ");
+  Serial.println((int)(&mpl1), HEX);
+  
+  mpu1 = new MPU();
+  Serial.println("MPU1 init: ");
+  Serial.println(mpu1->begin(0, 0x68));
+
+  Serial.println("MPL1 init: ");
+  Serial.println(mpl1->begin(1, 0x60));
+
+  MPU *mpus[2] = {mpu1}; // add new sensors here 
+  MPL *mpls[1] = {mpl1};
+
+  Serial.println("Data Collection init");
+  dataCollector.begin(mpus, 1, mpls, 1); 
 
   //do we wanna turn on an LED to confirm that we're all initialized?
+  
 }
 
 /*
@@ -85,12 +86,11 @@ void setup() {
  * update next state after the switch statement
  */
 void loop(){
-  //Update The Data, Get next Best Guess at ALT ACC and VELO------------------
-  dataCollector->collect();
-
+  
+  dataCollector.collect();
   curr_time = millis();
 
-  //make sure ignition pins stay low!
+  //make sure ignition pins stay low
   if ( (deploy_drogue_time == 0) || (curr_time > deploy_drogue_time + DROGUE_SIG_TIME) )
     digitalWrite(DROGUE_IGNITION_CIRCUIT, LOW);
   if ( (deploy_payload_time == 0) || (curr_time > deploy_drogue_time + PAYLOAD_SIG_TIME) )
@@ -98,17 +98,18 @@ void loop(){
   if ( (deploy_main_time == 0) || (curr_time > deploy_main_time + MAIN_SIG_TIME) )
     digitalWrite(MAIN_IGNITION_CIRCUIT, LOW);
 
-  //PRINT THE DATA THIS IS FOR TESTING ONLY!
+  dataCollector.popAlt(curr_alt);
+  dataCollector.popAccel(curr_accel);
+
+  Serial.print("\nCurrent State: ");
+  Serial.println(rocket.currentState);
+  Serial.print("Next State: ");
+  Serial.println(rocket.nextState);
   Serial.println("Current time: " + (String)curr_time);
-
-  curr_altitude = dataCollector->curr_alt;
-  Serial.println("Current Altitude: " + (String)curr_altitude);
-
-  curr_Acc[0] = dataCollector->curr_accel[0];
-  curr_Acc[1] = dataCollector->curr_accel[1];
-  curr_Acc[2] = dataCollector->curr_accel[2];
+  Serial.println("Current Altitude: " + (String)curr_alt);
   //TODO: sqrt squared of these values??
-  Serial.println("Current Acceleration X: " + (String)curr_Acc[0] + " Y: "+(String)curr_Acc[1] + " Z: " +(String)curr_Acc[2]);
+  Serial.println("Current Acceleration X: " + (String)curr_accel[0] + " Y: "+(String)curr_accel[1] + " Z: " +(String)curr_accel[2]);
+  Serial.println(rocket.detect_launch(curr_accel[2]));
 
   //update the current time one last time
   curr_time = millis();
@@ -117,15 +118,21 @@ void loop(){
   switch (rocket.currentState){
       
     case STANDBY:
-      if ((rocket.detect_launch(curr_Acc[2], launch_count)) > NUM_CHECKS){
-        rocket.nextState = POWERED_ASCENT;
-        launch_time = millis();
+      if (rocket.detect_launch(curr_accel[2])){
+        launch_count++;
+        if (launch_count > NUM_CHECKS){
+          rocket.nextState = POWERED_ASCENT;
+          launch_time = millis();
+        }
       }
       break;
       
     case POWERED_ASCENT:
-      if ( rocket.detect_burnout(curr_Acc[2], burnout_count) > NUM_CHECKS ){
-        rocket.nextState = COASTING;
+      if (rocket.detect_burnout(curr_accel[2])){
+        burnout_count++;
+        if(burnout_count > NUM_CHECKS){
+          rocket.nextState = COASTING;
+        }
       }
       else if (curr_time > (launch_time + BURNOUT_TIME)){
         rocket.nextState = COASTING;
@@ -133,18 +140,20 @@ void loop(){
       break;
       
     case COASTING:
-      if( rocket.coasting(curr_Acc[2], coasting_count) > NUM_CHECKS ){
+      if(rocket.coasting(curr_accel[2])){
+        coasting_count++;
+        if(coasting_count > NUM_CHECKS){
+          rocket.nextState = TEST_APOGEE;
+        }
+      }
+      else if ((curr_time > launch_time + PRED_APOGEE_TIME)){//TODO: make this agree with an altitude
         rocket.nextState = TEST_APOGEE;
       }
-      else if ((curr_time > launch_time + PRED_APOGEE_TIME) ){//TODO: make this agree with an altitude
-        rocket.nextState = TEST_APOGEE;
-      }
-    
       break;
-      
+/*  THIS ONE ALLOWS US TO SWAP BETWEEN COASTING AND TEST APOGEE    
     case TEST_APOGEE:
       temp_apogee_count = test_apogee_count;
-      test_apogee_count = rocket.test_apogee(curr_altitude, prev_altitude, test_apogee_count);
+      test_apogee_count = rocket.test_apogee(curr_alt, prev_alt, test_apogee_count);
       
       if ( test_apogee_count > NUM_CHECKS ){
         rocket.nextState = DEPLOY_DROGUE;
@@ -163,26 +172,38 @@ void loop(){
       }
       
       break;
+*/
+    case TEST_APOGEE:
+      if (rocket.test_apogee(curr_alt, prev_alt)){
+        test_apogee_count++;
+        if (test_apogee_count > NUM_CHECKS){
+          rocket.nextState = DEPLOY_DROGUE;
+        }
+      }
+      break;
       
     case DEPLOY_DROGUE:
-      deploy_drogue_time = millis();
       digitalWrite(DROGUE_IGNITION_CIRCUIT, HIGH); //send logic 1 to ignition circuit
+      deploy_drogue_time = millis();
       //TODO: pop in "delay" to keep signal on for 2 seconds
       rocket.nextState = DEPLOY_PAYLOAD;
       break;
       
     case DEPLOY_PAYLOAD:
       if (curr_time > deploy_drogue_time + 3000){
-        deploy_payload_time = millis();
         digitalWrite(PAYLOAD_IGNITION_CIRCUIT, HIGH); //send logic 1 to ignition circuit
+        deploy_payload_time = millis();
         rocket.nextState = INITIAL_DESCENT;
       }
-      
+      //TODO: pop in "delay" to keep signal on for 2 seconds
       break;
-      
+
     case INITIAL_DESCENT:
-      if( rocket.detect_main_alt(curr_altitude, detect_main_alt_count) > NUM_CHECKS ){
-        rocket.nextState = DEPLOY_MAIN;
+      if(rocket.detect_main_alt(curr_alt)){
+        detect_main_alt_count++;
+        if(detect_main_alt_count > NUM_CHECKS){
+          rocket.nextState = DEPLOY_MAIN;
+        }
       }
       break;
       
@@ -192,9 +213,12 @@ void loop(){
       break;
       
     case FINAL_DESCENT:
-      if (rocket.final_descent(curr_altitude, prev_altitude, curr_Acc[2], prev_Acc[2], landed_count) > NUM_CHECKS ) //returns true when we've landed
-        rocket.nextState = LANDED;
-
+      if (rocket.final_descent(curr_alt, prev_alt, curr_accel[2], prev_accel[2])){ //returns true when we've landed
+        landed_count++;
+        if (landed_count > NUM_CHECKS){
+          rocket.nextState = LANDED;
+        }
+      }
       break;
 
     case LANDED:
@@ -208,15 +232,10 @@ void loop(){
   rocket.currentState = rocket.nextState;
   delay(50);
 
-  Serial.print("\nCurrent State: ");
-  Serial.println(rocket.currentState);
-  Serial.print("Next State: ");
-  Serial.println(rocket.nextState);
+  prev_accel[0] = curr_accel[0];
+  prev_accel[1] = curr_accel[1];
+  prev_accel[2] = curr_accel[2];
 
-  prev_Acc[0] = curr_Acc[0];
-  prev_Acc[1] = curr_Acc[1];
-  prev_Acc[2] = curr_Acc[2];
-
-  prev_altitude = curr_altitude;
+  prev_alt = curr_alt;
     
 }

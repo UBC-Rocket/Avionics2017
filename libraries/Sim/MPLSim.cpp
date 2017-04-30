@@ -56,6 +56,7 @@ int MPL::updateBuffer() {
 
   //define test file names here
   switch(addr) {
+	//add more files here for more sensors
     case 0x60: simData = SD.open("/testMPL.bin", FILE_READ); break;
     default: simData = SD.open("/testMPL.bin", FILE_READ); break;
   }

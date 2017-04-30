@@ -30,11 +30,11 @@ void setup() {
   Serial.println("MPL1 init: ");
   Serial.println(mpl1->begin(1, 0x60));
 
-  MPU *mpus[2] = {mpu1};
+  MPU *mpus[2] = {mpu1}; // add new sensors here 
   MPL *mpls[1] = {mpl1};
 
   Serial.println("Data Collection init");
-  collector.begin(mpus, 1, mpls, 1);
+  collector.begin(mpus, 1, mpls, 1); 
 }
 
 void loop() {

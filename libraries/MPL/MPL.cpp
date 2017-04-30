@@ -41,6 +41,8 @@ int MPL::begin(bool whichWire, uint8_t Addr) {
   num_samples_avg = NUM_SAMPLES_AVG;
 
   groundLevel = 0;
+  
+  setGround();
 
   return 0;
 }
