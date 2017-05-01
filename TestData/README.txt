@@ -1,0 +1,1 @@
+Bbasic launch has a ~5 minute on ground wait then launch using late April rocksim data with added noise and a 2 minute after landing wait. No added error cases
