@@ -1,4 +1,4 @@
-data = csvread('basicLaunch.csv', 1, 0);
+data = csvread('RawWithNoise1.csv', 1, 0);
 times = data(:, 1);
 gyros = data(:, 2);
 accels = data(:, 3);
