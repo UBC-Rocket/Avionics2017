@@ -57,6 +57,15 @@ int DataCollection::popAccel(float accel[]) {
   return 0;
 }
 
+float DataCollection::getTotalAccel(float accel[]){
+  float total_accel;
+  popAccel(accel);
+  
+  total_accel = accel[0]*accel[0] + accel[1]*accel[1] + accel[2]*accel[2];
+  total_accel = sqrt(total_accel);
+  return total_accel;
+}
+
 /**
  * Get most recent magnetometer reading
  * \param mag A 3 element array to be filled with the x y and z components of magnetometer reading

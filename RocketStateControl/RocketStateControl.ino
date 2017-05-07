@@ -2,8 +2,8 @@
  * UBC ROCKET
  */
 #include <Rocket.h>
-#include <MPUSim.h>
-#include <MPLSim.h>
+#include <MPU.h>
+#include <MPL.h>
 #include <i2c_t3.h>
 #include <TimerOne.h>
 #include <DataCollection.h>
@@ -42,7 +42,7 @@ int launch_count, burnout_count, coasting_count, test_apogee_count, temp_apogee_
 unsigned long curr_time, launch_time, deploy_drogue_time, deploy_payload_time, deploy_main_time;
 
 //temp for printing and TESTING
-float curr_alt, prev_alt, curr_accel[3], prev_accel[3];
+float curr_alt, prev_alt, curr_accel[3], prev_accel[3], total_accel, prev_total_accel;
 
 Rocket rocket(STANDBY, STANDBY);
 DataCollection dataCollector;
@@ -68,7 +68,7 @@ void setup() {
   Serial.println(mpu1->begin(0, 0x68));
 
   Serial.println("MPL1 init: ");
-  Serial.println(mpl1->begin(1, 0x60));
+  Serial.println(mpl1->begin(0, 0x60));
 
   MPU *mpus[2] = {mpu1}; // add new sensors here 
   MPL *mpls[1] = {mpl1};
@@ -100,6 +100,7 @@ void loop(){
 
   dataCollector.popAlt(curr_alt);
   dataCollector.popAccel(curr_accel);
+  total_accel = dataCollector.getTotalAccel(curr_accel);
 
   Serial.print("\nCurrent State: ");
   Serial.println(rocket.currentState);
@@ -109,7 +110,7 @@ void loop(){
   Serial.println("Current Altitude: " + (String)curr_alt);
   //TODO: sqrt squared of these values??
   Serial.println("Current Acceleration X: " + (String)curr_accel[0] + " Y: "+(String)curr_accel[1] + " Z: " +(String)curr_accel[2]);
-  Serial.println(rocket.detect_launch(curr_accel[2]));
+  Serial.println("Total Acceleration: " + (String)total_accel);
 
   //update the current time one last time
   curr_time = millis();
@@ -118,7 +119,7 @@ void loop(){
   switch (rocket.currentState){
       
     case STANDBY:
-      if (rocket.detect_launch(curr_accel[2])){
+      if (rocket.detect_launch(total_accel)){
         launch_count++;
         if (launch_count > NUM_CHECKS){
           rocket.nextState = POWERED_ASCENT;
@@ -128,7 +129,7 @@ void loop(){
       break;
       
     case POWERED_ASCENT:
-      if (rocket.detect_burnout(curr_accel[2])){
+      if (rocket.detect_burnout(total_accel)){
         burnout_count++;
         if(burnout_count > NUM_CHECKS){
           rocket.nextState = COASTING;
@@ -140,7 +141,7 @@ void loop(){
       break;
       
     case COASTING:
-      if(rocket.coasting(curr_accel[2])){
+      if(rocket.coasting(total_accel)){
         coasting_count++;
         if(coasting_count > NUM_CHECKS){
           rocket.nextState = TEST_APOGEE;
@@ -213,7 +214,7 @@ void loop(){
       break;
       
     case FINAL_DESCENT:
-      if (rocket.final_descent(curr_alt, prev_alt, curr_accel[2], prev_accel[2])){ //returns true when we've landed
+      if (rocket.final_descent(curr_alt, prev_alt, total_accel, prev_total_accel)){ //returns true when we've landed
         landed_count++;
         if (landed_count > NUM_CHECKS){
           rocket.nextState = LANDED;
@@ -235,6 +236,7 @@ void loop(){
   prev_accel[0] = curr_accel[0];
   prev_accel[1] = curr_accel[1];
   prev_accel[2] = curr_accel[2];
+  prev_total_accel = total_accel;
 
   prev_alt = curr_alt;
     

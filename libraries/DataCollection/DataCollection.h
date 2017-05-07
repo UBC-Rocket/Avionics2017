@@ -2,8 +2,8 @@
 #define DataCollection_H
 
 
-#include "MPLSim.h"
-#include "MPUSim.h"
+#include "MPL.h"
+#include "MPU.h"
 
 
 #include <inttypes.h>
@@ -42,6 +42,7 @@ public:
   int filterData();
   int popGyro(float gyro[]);
   int popAccel(float accel[]);
+  float getTotalAccel(float accel[]);
   int popMag(float mag[]);
   int popAlt(float &alt);
 
