@@ -160,9 +160,20 @@ int DataCollection::collect() {
   return BUFFER_SIZE - bufPosition++;
 }
 
+
+/* saveRocketState: Saves the rockets state to the state buffer to be saved next time write data is called
+*/
+
+
+int DataCollection::saveRocketState(int state) {
+	
+	states[bufPosition] = state;
+	return 0;
+}
+
 /* writeData: writes contents of buffer to SD card.
- * returns: 0 on success, -1 if the buffer is locked, or SD card error code.
- */
+* returns: 0 on success, -1 if the buffer is locked, or SD card error code.
+*/
 
 int DataCollection::writeData() {
   float lastGyro[3];
@@ -200,7 +211,10 @@ int DataCollection::writeData() {
     dataFile.print("; ");
 
     dataFile.print(altReadings[i]);
-    dataFile.println(";");
+    dataFile.println("; ");
+
+	dataFile.print(states[i]);
+	dataFile.println("; ");
   }
 
   dataFile.close();
@@ -250,7 +264,7 @@ float DataCollection::average(float data[], int length) {
     avg += data[x];
   }
 
-  return avg/length;
+  return avg/length; //divid by zero, care
 }
 
 void DataCollection::debug(String msg) {

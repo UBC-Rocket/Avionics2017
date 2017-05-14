@@ -52,7 +52,7 @@ MPL *mpl1;
 void setup() {
 
   Serial.begin(9600);
-  while(!Serial) delay(1);
+  //while(!Serial) delay(1);
 
   //Initialize pins for ignition circuits as outputs
   pinMode(DROGUE_IGNITION_CIRCUIT, OUTPUT);
@@ -68,7 +68,7 @@ void setup() {
   Serial.println(mpu1->begin(0, 0x68));
 
   Serial.println("MPL1 init: ");
-  Serial.println(mpl1->begin(0, 0x60));
+  Serial.println(mpl1->begin(1, 0x60));
 
   MPU *mpus[2] = {mpu1}; // add new sensors here 
   MPL *mpls[1] = {mpl1};
@@ -86,7 +86,7 @@ void setup() {
  * update next state after the switch statement
  */
 void loop(){
-  
+  //dataCollector.saveRocketState(rocket.currentState);
   dataCollector.collect();
   curr_time = millis();
 

@@ -33,6 +33,7 @@ class DataCollection {
   float gyroReadings[BUFFER_SIZE][3];
   float accelReadings[BUFFER_SIZE][3];
   float magReadings[BUFFER_SIZE][3];
+  int states[BUFFER_SIZE*2];
   float altReadings[BUFFER_SIZE];
   unsigned long time[BUFFER_SIZE];
 
@@ -40,6 +41,7 @@ public:
 
   int begin(MPU *mpu[], int MPUlen, MPL *mpl[], int MPLlen);
   int filterData();
+  int saveRocketState(int state);
   int popGyro(float gyro[]);
   int popAccel(float accel[]);
   float getTotalAccel(float accel[]);
