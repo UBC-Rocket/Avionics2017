@@ -68,7 +68,7 @@ void setup() {
   Serial.println(mpu1->begin(0, 0x68));
 
   Serial.println("MPL1 init: ");
-  Serial.println(mpl1->begin(1, 0x60));
+  Serial.println(mpl1->begin(0, 0x60));
 
   MPU *mpus[2] = {mpu1}; // add new sensors here 
   MPL *mpls[1] = {mpl1};
