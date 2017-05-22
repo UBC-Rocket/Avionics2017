@@ -85,7 +85,10 @@ int MPL::readAlt(float &data) {
 
   if(err = read(ALT_REG, 3, buffer)) return err;
 
-  data = (float)((buffer[0]<<8) | buffer[1]); //The high byte of the altitude
+  //IF IT SASSES YOU ON TYPE DEFINITIONS CHANGE THIS TO SHORT
+  int16_t dataWhole = ((buffer[0]<<8) | buffer[1]); 
+
+  data = (float)dataWhole; //The high byte of the altitude
   data += (float)(buffer[2] >> 4) / 16.0; //The fractional component of the altitude
 
   return 0;
