@@ -32,9 +32,9 @@
 #define PRED_APOGEE_TIME  28000 //whatever time we think apogee will be at
 
 //ignition Circuit Definitions
-const int DROGUE_IGNITION_CIRCUIT = 7;  //pin to drogue chute ignition circuit
-const int PAYLOAD_IGNITION_CIRCUIT = 8; //pin to nose cone ignition circuit
-const int MAIN_IGNITION_CIRCUIT = 9;
+const int DROGUE_IGNITION_CIRCUIT = 0;  //pin to drogue chute ignition circuit
+const int PAYLOAD_IGNITION_CIRCUIT = 1; //pin to nose cone ignition circuit
+const int MAIN_IGNITION_CIRCUIT = 2;
 
 //count variables for decisions
 int launch_count, burnout_count, coasting_count, test_apogee_count, temp_apogee_count, test_apogee_failed, detect_main_alt_count, landed_count;
@@ -69,7 +69,7 @@ void setup() {
   Serial.println(mpu1->begin(0, 0x68));
 
   Serial.println("MPL1 init: ");
-  Serial.println(mpl1->begin(1, 0x60));
+  Serial.println(mpl1->begin(1, 0x60)); //IF ITS BITCHING, CHANGE THE 1 TO A 0
 
   MPU *mpus[2] = {mpu1}; // add new sensors here 
   MPL *mpls[1] = {mpl1};
