@@ -23,11 +23,11 @@ Rocket::Rocket(int initialCurrentState, int initialNextState)
 	//setRocketStates(currentState, nextState);
 }
 
-bool Rocket::detect_launch(float curr_accel) {
+bool Rocket::detect_launch(float curr_alt, float prev_alt) {
 	//giant spike in acceleration 
 	//return true when we've seen 4 positive accelerations in a row 
 	
-	if (curr_accel > SIM_LAUNCH_ACCEL)
+	if (curr_alt > prev_alt)
 		return true;
 	else
 		return false;

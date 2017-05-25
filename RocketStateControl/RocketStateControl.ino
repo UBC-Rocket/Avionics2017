@@ -23,6 +23,7 @@
 #define LANDED            9
 
 #define NUM_CHECKS        4     //each condition has to pass 5 times 
+#define APOGEE_NUM_CHECKS 10
 
 #define BURNOUT_TIME      4500
 #define DROGUE_SIG_TIME   3000
@@ -120,7 +121,7 @@ void loop(){
   switch (rocket.currentState){
       
     case STANDBY:
-      if (rocket.detect_launch(total_accel)){
+      if (rocket.detect_launch(curr_alt, prev_alt)){
         launch_count++;
         if (launch_count > NUM_CHECKS){
           rocket.nextState = POWERED_ASCENT;
@@ -130,18 +131,12 @@ void loop(){
       break;
       
     case POWERED_ASCENT:
-      if (rocket.detect_burnout(total_accel)){
-        burnout_count++;
-        if(burnout_count > NUM_CHECKS){
-          rocket.nextState = COASTING;
-        }
-      }
-      else if (curr_time > (launch_time + BURNOUT_TIME)){
-        rocket.nextState = COASTING;
+      if (curr_time > (launch_time + BURNOUT_TIME)){
+        rocket.nextState = TEST_APOGEE;
       }
       break;
       
-    case COASTING:
+    /*case COASTING:
       if(rocket.coasting(total_accel)){
         coasting_count++;
         if(coasting_count > NUM_CHECKS){
@@ -151,34 +146,12 @@ void loop(){
       else if ((curr_time > launch_time + PRED_APOGEE_TIME)){//TODO: make this agree with an altitude
         rocket.nextState = TEST_APOGEE;
       }
-      break;
-/*  THIS ONE ALLOWS US TO SWAP BETWEEN COASTING AND TEST APOGEE    
-    case TEST_APOGEE:
-      temp_apogee_count = test_apogee_count;
-      test_apogee_count = rocket.test_apogee(curr_alt, prev_alt, test_apogee_count);
-      
-      if ( test_apogee_count > NUM_CHECKS ){
-        rocket.nextState = DEPLOY_DROGUE;
-        test_apogee_failed = 0;
-      }
-      //this is gross and im embarassed - will fix this shit
-      else if (test_apogee_count == temp_apogee_count){
-        test_apogee_failed++;
-      }
-      else if (curr_time > launch_time + PRED_APOGEE_TIME){//TODO: make this agree with an altitude
-        rocket.nextState = DEPLOY_DROGUE;
-      }
+      break;*/
 
-      if (test_apogee_failed > NUM_CHECKS){
-        rocket.nextState = COASTING;
-      }
-      
-      break;
-*/
     case TEST_APOGEE:
       if (rocket.test_apogee(curr_alt, prev_alt)){
         test_apogee_count++;
-        if (test_apogee_count > NUM_CHECKS){
+        if (test_apogee_count > APOGEE_NUM_CHECKS){
           rocket.nextState = DEPLOY_DROGUE;
         }
       }
