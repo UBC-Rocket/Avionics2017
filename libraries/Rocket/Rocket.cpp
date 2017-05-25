@@ -27,7 +27,7 @@ bool Rocket::detect_launch(float curr_alt, float prev_alt) {
 	//giant spike in acceleration 
 	//return true when we've seen 4 positive accelerations in a row 
 	
-	if (curr_alt > prev_alt)
+	if (curr_alt > prev_alt && curr_alt > 5)
 		return true;
 	else
 		return false;
