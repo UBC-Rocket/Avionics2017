@@ -110,6 +110,7 @@ void loop(){
   Serial.println(rocket.nextState);
   Serial.println("Current time: " + (String)curr_time);
   Serial.println("Current Altitude: " + (String)curr_alt);
+  Serial.println("Average Altitude: " + (String)avg_alt);
   //TODO: sqrt squared of these values??
   Serial.println("Current Acceleration X: " + (String)curr_accel[0] + " Y: "+(String)curr_accel[1] + " Z: " +(String)curr_accel[2]);
   Serial.println("Total Acceleration: " + (String)total_accel);
