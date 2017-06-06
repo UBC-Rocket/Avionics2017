@@ -2,6 +2,7 @@
 
 #define ACCEL_FS 16
 #define GYRO_FS 2000
+#define AVG_SIZE 5
 
 int DataCollection::begin(MPU *mpu[], int MPUlen, MPL *mpl[], int MPLlen) {
   bufPosition = 0;
@@ -87,6 +88,37 @@ int DataCollection::popMag(float mag[]) {
 int DataCollection::popAlt(float &alt) {
   if(bufPosition < 1) return -1;
   alt = altReadings[bufPosition - 1];
+  return 0;
+}
+
+/*
+ * Update the array containing the previous altitudes 
+ */
+int DataCollection::updatePrevAlts(){
+  for(int i = AVG_SIZE - 1; i > 0; i--){
+	  prev_alts[i] = prev_alts[i-1];
+  }
+  popAlt(prev_alts[0]);
+  return 0;
+}
+
+/*
+ * Average the previous altitude readings 
+ * \param avgAlt a float to be filled with the average of the previous alt readings (including the most recent one)
+ * \param prevAvgAlt a float to be filled with the average of the previous alt readings
+ */
+int DataCollection::avgPrevAlts(float &avgAlt, float &prevAvgAlt) {
+  for(int i = 0; i < AVG_SIZE; i++){
+	prevAvgAlt += prev_alts[i];
+  }
+  prevAvgAlt /= AVG_SIZE;
+
+  updatePrevAlts();
+  
+  for(int i = 0; i < AVG_SIZE; i++){
+	  avgAlt += prev_alts[i];
+  }
+  avgAlt /= AVG_SIZE;
   return 0;
 }
 

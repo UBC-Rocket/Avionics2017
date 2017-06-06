@@ -13,6 +13,7 @@
 
 #define BUFFER_SIZE 20
 #define NSENSORS 3
+#define AVG_SIZE 5
 
 //MPL alt = new MPL(0);
 //MPU pos = new MPU(0);
@@ -27,6 +28,7 @@ class DataCollection {
   int MPULength, MPLLength;
   
   float curr_altitude;
+  float prev_alts[AVG_SIZE];
   int16_t curr_Acc[3];
 
   int bufPosition;
@@ -47,6 +49,8 @@ public:
   float getTotalAccel(float accel[]);
   int popMag(float mag[]);
   int popAlt(float &alt);
+  int updatePrevAlts();
+  int avgPrevAlts(float &avgAlt, float &prevAvgAlt);
 
   int collect();
   int writeData();

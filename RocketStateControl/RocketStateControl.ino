@@ -42,7 +42,7 @@ int launch_count, burnout_count, coasting_count, test_apogee_count, temp_apogee_
 unsigned long curr_time, launch_time, deploy_drogue_time, deploy_payload_time, deploy_main_time;
 
 //temp for printing and TESTING
-float curr_alt, prev_alt, curr_accel[3], prev_accel[3], total_accel, prev_total_accel;
+float curr_alt, prev_alt, avg_alt, prev_avg_alt, curr_accel[3], prev_accel[3], total_accel, prev_total_accel;
 
 Rocket rocket(STANDBY, STANDBY);
 DataCollection dataCollector;
@@ -100,6 +100,7 @@ void loop(){
     digitalWrite(MAIN_IGNITION_CIRCUIT, LOW);
 
   dataCollector.popAlt(curr_alt);
+  dataCollector.avgPrevAlts(avg_alt, prev_avg_alt);
   dataCollector.popAccel(curr_accel);
   total_accel = dataCollector.getTotalAccel(curr_accel);
 
@@ -126,68 +127,45 @@ void loop(){
           rocket.nextState = POWERED_ASCENT;
           launch_time = millis();
         }
-      }
+      }    
+      else
+        launch_count = 0;
       break;
       
     case POWERED_ASCENT:
-      if (rocket.detect_burnout(total_accel)){
+      if (rocket.detect_burnout(total_accel))
         burnout_count++;
-        if(burnout_count > NUM_CHECKS){
+      else
+        burnout_count = 0;
+
+      if(burnout_count > NUM_CHECKS || curr_time > (launch_time + BURNOUT_TIME))
           rocket.nextState = COASTING;
-        }
-      }
-      else if (curr_time > (launch_time + BURNOUT_TIME)){
-        rocket.nextState = COASTING;
-      }
       break;
       
     case COASTING:
-      if(rocket.coasting(total_accel)){
+      if(rocket.coasting(total_accel))
         coasting_count++;
-        if(coasting_count > NUM_CHECKS){
-          rocket.nextState = TEST_APOGEE;
-        }
-      }
-      else if ((curr_time > launch_time + PRED_APOGEE_TIME)){//TODO: make this agree with an altitude
+      else
+        coasting_count = 0;
+        
+      if(coasting_count > NUM_CHECKS || curr_time > launch_time + PRED_APOGEE_TIME)//TODO: make this agree with an altitude
         rocket.nextState = TEST_APOGEE;
-      }
       break;
-/*  THIS ONE ALLOWS US TO SWAP BETWEEN COASTING AND TEST APOGEE    
-    case TEST_APOGEE:
-      temp_apogee_count = test_apogee_count;
-      test_apogee_count = rocket.test_apogee(curr_alt, prev_alt, test_apogee_count);
-      
-      if ( test_apogee_count > NUM_CHECKS ){
-        rocket.nextState = DEPLOY_DROGUE;
-        test_apogee_failed = 0;
-      }
-      //this is gross and im embarassed - will fix this shit
-      else if (test_apogee_count == temp_apogee_count){
-        test_apogee_failed++;
-      }
-      else if (curr_time > launch_time + PRED_APOGEE_TIME){//TODO: make this agree with an altitude
-        rocket.nextState = DEPLOY_DROGUE;
-      }
 
-      if (test_apogee_failed > NUM_CHECKS){
-        rocket.nextState = COASTING;
-      }
-      
-      break;
-*/
     case TEST_APOGEE:
-      if (rocket.test_apogee(curr_alt, prev_alt)){
+      //if (rocket.test_apogee(curr_alt, prev_alt))
+      if (rocket.test_apogee(avg_alt, prev_avg_alt))
         test_apogee_count++;
-        if (test_apogee_count > NUM_CHECKS){
-          rocket.nextState = DEPLOY_DROGUE;
-        }
-      }
+      else 
+        test_apogee_count = 0;
+
+      if (test_apogee_count > NUM_CHECKS)
+        rocket.nextState = DEPLOY_DROGUE;
       break;
       
     case DEPLOY_DROGUE:
       digitalWrite(DROGUE_IGNITION_CIRCUIT, HIGH); //send logic 1 to ignition circuit
       deploy_drogue_time = millis();
-      //TODO: pop in "delay" to keep signal on for 2 seconds
       rocket.nextState = DEPLOY_PAYLOAD;
       break;
       
@@ -197,16 +175,17 @@ void loop(){
         deploy_payload_time = millis();
         rocket.nextState = INITIAL_DESCENT;
       }
-      //TODO: pop in "delay" to keep signal on for 2 seconds
       break;
 
     case INITIAL_DESCENT:
-      if(rocket.detect_main_alt(curr_alt)){
+      //if(rocket.detect_main_alt(curr_alt))
+      if(rocket.detect_main_alt(avg_alt))
         detect_main_alt_count++;
-        if(detect_main_alt_count > NUM_CHECKS){
-          rocket.nextState = DEPLOY_MAIN;
-        }
-      }
+      else
+        detect_main_alt_count = 0;
+
+      if(detect_main_alt_count > NUM_CHECKS)
+        rocket.nextState = DEPLOY_MAIN;
       break;
       
     case DEPLOY_MAIN:
@@ -215,12 +194,14 @@ void loop(){
       break;
       
     case FINAL_DESCENT:
-      if (rocket.final_descent(curr_alt, prev_alt, total_accel, prev_total_accel)){ //returns true when we've landed
+      //if (rocket.final_descent(curr_alt, prev_alt, total_accel, prev_total_accel)) //returns true when we've landed
+      if (rocket.final_descent(avg_alt, prev_avg_alt, total_accel, prev_total_accel))
         landed_count++;
-        if (landed_count > NUM_CHECKS){
-          rocket.nextState = LANDED;
-        }
-      }
+      else
+        landed_count = 0;
+        
+      if (landed_count > NUM_CHECKS)
+        rocket.nextState = LANDED;
       break;
 
     case LANDED:
