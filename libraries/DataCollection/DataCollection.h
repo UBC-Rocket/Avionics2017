@@ -30,6 +30,8 @@ class DataCollection {
   float curr_altitude;
   float prev_alts[AVG_SIZE];
   int16_t curr_Acc[3];
+  int16_t prev_z_accel[AVG_SIZE]; //ONLY CONTAINS Z AXIS ACCEL
+  int16_t prev_total_accel[AVG_SIZE]; //CONTAINS SQ/SQRT OF X Y Z
 
   int bufPosition;
   float gyroReadings[BUFFER_SIZE][3];
@@ -46,7 +48,11 @@ public:
   int saveRocketState(int state);
   int popGyro(float gyro[]);
   int popAccel(float accel[]);
-  float getTotalAccel(float accel[]);
+  int updatePrevZAccel();
+  int avgPrevZAccel(float &avgZAccel, float &prevAvgZAccel);
+  int getTotalAccel(float total_accel);
+  int updatePrevTotalAccel();
+  int avgPrevTotalAccel(float &avgTotalAccel, float &prevAvgTotalAccel);
   int popMag(float mag[]);
   int popAlt(float &alt);
   int updatePrevAlts();

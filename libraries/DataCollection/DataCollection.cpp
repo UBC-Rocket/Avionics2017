@@ -58,13 +58,72 @@ int DataCollection::popAccel(float accel[]) {
   return 0;
 }
 
-float DataCollection::getTotalAccel(float accel[]){
-  float total_accel;
+/*
+ * Update the array containing the previous accel  
+ */
+int DataCollection::updatePrevZAccel(){
+  float curr_accel[3]; //
+  for(int i = AVG_SIZE - 1; i > 0; i--){
+	  prev_z_accel[i] = prev_z_accel[i-1];
+  }
+  popAccel(curr_accel);
+  prev_z_accel[0] = curr_accel[2];
+  return 0;
+}
+
+/*
+ * Average the previous Z acceleration readings 
+ * \param avgZAccel a float to be filled with the average of the previous accel readings (including the most recent one)
+ * \param prevAvgZAccel a float to be filled with the average of the previous accel readings
+ */
+int DataCollection::avgPrevZAccel(float &avgZAccel, float &prevAvgZAccel) {
+  for(int i = 0; i < AVG_SIZE; i++){
+	prevAvgZAccel += prev_z_accel[i];
+  }
+  prevAvgZAccel /= AVG_SIZE;
+
+  updatePrevZAccel();
+  
+  for(int i = 0; i < AVG_SIZE; i++){
+	  avgZAccel += prev_z_accel[i];
+  }
+  avgZAccel /= AVG_SIZE;
+  return 0;
+}
+
+int DataCollection::getTotalAccel(float total_accel){
+  float accel[3];
   popAccel(accel);
   
   total_accel = accel[0]*accel[0] + accel[1]*accel[1] + accel[2]*accel[2];
   total_accel = sqrt(total_accel);
-  return total_accel;
+  return 0;
+}
+
+int DataCollection::updatePrevTotalAccel(){
+  float curr_total_accel;
+  
+  for(int i = AVG_SIZE - 1; i > 0; i--){
+	  prev_z_accel[i] = prev_z_accel[i-1];
+  }
+  getTotalAccel(curr_total_accel);
+  prev_total_accel[0] = curr_total_accel;
+  return 0;
+}
+
+int DataCollection::avgPrevTotalAccel(float &avgTotalAccel, float &prevAvgTotalAccel) {
+  for(int i = 0; i < AVG_SIZE; i++){
+	prevAvgTotalAccel += prev_total_accel[i];
+  }
+  prevAvgTotalAccel /= AVG_SIZE;
+
+  updatePrevTotalAccel();
+  
+  for(int i = 0; i < AVG_SIZE; i++){
+	  avgTotalAccel += prev_total_accel[i];
+  }
+  avgTotalAccel /= AVG_SIZE;
+  return 0;
 }
 
 /**

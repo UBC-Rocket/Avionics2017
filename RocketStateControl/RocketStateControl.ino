@@ -42,7 +42,7 @@ int launch_count, burnout_count, coasting_count, test_apogee_count, temp_apogee_
 unsigned long curr_time, launch_time, deploy_drogue_time, deploy_payload_time, deploy_main_time;
 
 //temp for printing and TESTING
-float curr_alt, prev_alt, avg_alt, prev_avg_alt, curr_accel[3], prev_accel[3], total_accel, prev_total_accel;
+float curr_alt, prev_alt, avg_alt, prev_avg_alt, curr_accel[3], prev_accel[3], total_accel, prev_total_accel, avg_z_accel, prev_avg_z_accel;
 
 Rocket rocket(STANDBY, STANDBY);
 DataCollection dataCollector;
@@ -102,7 +102,8 @@ void loop(){
   dataCollector.popAlt(curr_alt);
   dataCollector.avgPrevAlts(avg_alt, prev_avg_alt);
   dataCollector.popAccel(curr_accel);
-  total_accel = dataCollector.getTotalAccel(curr_accel);
+  dataCollector.getTotalAccel(total_accel);
+  dataCollector.avgPrevZAccel(avg_z_accel, prev_avg_z_accel);
 
   Serial.print("\nCurrent State: ");
   Serial.println(rocket.currentState);
@@ -114,6 +115,8 @@ void loop(){
   //TODO: sqrt squared of these values??
   Serial.println("Current Acceleration X: " + (String)curr_accel[0] + " Y: "+(String)curr_accel[1] + " Z: " +(String)curr_accel[2]);
   Serial.println("Total Acceleration: " + (String)total_accel);
+  Serial.println("Average Z Acceleration: " + (String)avg_z_accel);
+  Serial.println("Prev Average Z Acceleration: " + (String)prev_avg_z_accel);
 
   //update the current time one last time
   curr_time = millis();
