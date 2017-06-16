@@ -14,6 +14,7 @@
 #define BUFFER_SIZE 20
 #define NSENSORS 3
 #define AVG_SIZE 5
+#define ALT_AVG_SIZE 10
 
 //MPL alt = new MPL(0);
 //MPU pos = new MPU(0);

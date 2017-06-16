@@ -3,6 +3,7 @@
 #define ACCEL_FS 16
 #define GYRO_FS 2000
 #define AVG_SIZE 5
+#define ALT_AVG_SIZE 8
 
 int DataCollection::begin(MPU *mpu[], int MPUlen, MPL *mpl[], int MPLlen) {
   bufPosition = 0;
@@ -77,17 +78,19 @@ int DataCollection::updatePrevZAccel(){
  * \param prevAvgZAccel a float to be filled with the average of the previous accel readings
  */
 int DataCollection::avgPrevZAccel(float &avgZAccel, float &prevAvgZAccel) {
+  prevAvgZAccel = 0;
+  avgZAccel = 0;
   for(int i = 0; i < AVG_SIZE; i++){
 	prevAvgZAccel += prev_z_accel[i];
   }
-  prevAvgZAccel /= AVG_SIZE;
+  prevAvgZAccel /= (AVG_SIZE );
 
   updatePrevZAccel();
   
   for(int i = 0; i < AVG_SIZE; i++){
 	  avgZAccel += prev_z_accel[i];
   }
-  avgZAccel /= AVG_SIZE;
+  avgZAccel /= (AVG_SIZE );
   return 0;
 }
 
@@ -112,6 +115,8 @@ int DataCollection::updatePrevTotalAccel(){
 }
 
 int DataCollection::avgPrevTotalAccel(float &avgTotalAccel, float &prevAvgTotalAccel) {
+  avgTotalAccel = 0;
+  prevAvgTotalAccel = 0;
   for(int i = 0; i < AVG_SIZE; i++){
 	prevAvgTotalAccel += prev_total_accel[i];
   }
@@ -154,7 +159,7 @@ int DataCollection::popAlt(float &alt) {
  * Update the array containing the previous altitudes 
  */
 int DataCollection::updatePrevAlts(){
-  for(int i = AVG_SIZE - 1; i > 0; i--){
+  for(int i = ALT_AVG_SIZE - 1; i > 0; i--){
 	  prev_alts[i] = prev_alts[i-1];
   }
   popAlt(prev_alts[0]);
@@ -167,17 +172,19 @@ int DataCollection::updatePrevAlts(){
  * \param prevAvgAlt a float to be filled with the average of the previous alt readings
  */
 int DataCollection::avgPrevAlts(float &avgAlt, float &prevAvgAlt) {
-  for(int i = 0; i < AVG_SIZE; i++){
+  avgAlt = 0;
+  prevAvgAlt = 0;
+  for(int i = 0; i < ALT_AVG_SIZE; i++){
 	prevAvgAlt += prev_alts[i];
   }
-  prevAvgAlt /= AVG_SIZE;
+  prevAvgAlt /= ALT_AVG_SIZE;
 
   updatePrevAlts();
   
-  for(int i = 0; i < AVG_SIZE; i++){
+  for(int i = 0; i < ALT_AVG_SIZE; i++){
 	  avgAlt += prev_alts[i];
   }
-  avgAlt /= AVG_SIZE;
+  avgAlt /= ALT_AVG_SIZE;
   return 0;
 }
 
