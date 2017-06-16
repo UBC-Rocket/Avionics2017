@@ -114,7 +114,7 @@ void loop(){
   Serial.println("Average Altitude: " + (String)avg_alt);
   //TODO: sqrt squared of these values??
   Serial.println("Current Acceleration X: " + (String)curr_accel[0] + " Y: "+(String)curr_accel[1] + " Z: " +(String)curr_accel[2]);
-  Serial.println("Total Acceleration: " + (String)total_accel);
+  //Serial.println("Total Acceleration: " + (String)total_accel);
   Serial.println("Average Z Acceleration: " + (String)avg_z_accel);
   Serial.println("Prev Average Z Acceleration: " + (String)prev_avg_z_accel);
 

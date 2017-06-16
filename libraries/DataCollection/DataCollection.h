@@ -29,9 +29,9 @@ class DataCollection {
   
   float curr_altitude;
   float prev_alts[AVG_SIZE];
-  int16_t curr_Acc[3];
-  int16_t prev_z_accel[AVG_SIZE]; //ONLY CONTAINS Z AXIS ACCEL
-  int16_t prev_total_accel[AVG_SIZE]; //CONTAINS SQ/SQRT OF X Y Z
+  float curr_Acc[3];
+  float prev_z_accel[AVG_SIZE]; //ONLY CONTAINS Z AXIS ACCEL
+  float prev_total_accel[AVG_SIZE]; //CONTAINS SQ/SQRT OF X Y Z
 
   int bufPosition;
   float gyroReadings[BUFFER_SIZE][3];
