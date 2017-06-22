@@ -125,7 +125,7 @@ void loop(){
   switch (rocket.currentState){
       
     case STANDBY:
-      if (rocket.detect_launch(total_accel)){
+      if (rocket.detect_launch(avg_z_accel, avg_alt)){
         launch_count++;
         if (launch_count > NUM_CHECKS){
           rocket.nextState = POWERED_ASCENT;
@@ -137,7 +137,7 @@ void loop(){
       break;
       
     case POWERED_ASCENT:
-      if (rocket.detect_burnout(total_accel))
+      if (rocket.detect_burnout(avg_z_accel))
         burnout_count++;
       else
         burnout_count = 0;
@@ -147,7 +147,7 @@ void loop(){
       break;
       
     case COASTING:
-      if(rocket.coasting(total_accel))
+      if(rocket.coasting(avg_z_accel))
         coasting_count++;
       else
         coasting_count = 0;
@@ -199,7 +199,7 @@ void loop(){
       
     case FINAL_DESCENT:
       //if (rocket.final_descent(curr_alt, prev_alt, total_accel, prev_total_accel)) //returns true when we've landed
-      if (rocket.final_descent(avg_alt, prev_avg_alt, total_accel, prev_total_accel))
+      if (rocket.final_descent(avg_alt, prev_avg_alt, avg_z_accel, prev_avg_z_accel))
         landed_count++;
       else
         landed_count = 0;
